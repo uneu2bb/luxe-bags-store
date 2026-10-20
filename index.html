@@ -22,10 +22,10 @@
     .cat-card:hover img{transform:scale(1.08)}
     .cat-card,.product-card{transition:all .35s cubic-bezier(.22,1,.36,1)}
     .product-card:hover{transform:translateY(-6px)}
-    /* زر التواصل العائم — أسفل اليسار، حجم الأزرار فقط */
+    /* زر التواصل العائم — أسفل اليسار فقط، بدون حجب الشاشة */
     .fab-social{
       position: fixed !important;
-      left: 20px !important;
+      left: 16px !important;
       right: auto !important;
       bottom: 20px !important;
       top: auto !important;
@@ -34,23 +34,30 @@
       padding: 0 !important;
       width: auto !important;
       height: auto !important;
-      max-width: none !important;
-      max-height: none !important;
       transform: none !important;
-      inset: auto auto 20px 20px !important;
       direction: ltr !important;
-      /* الحاوية شفافة للمس — ما تحجب المنتجات */
       pointer-events: none !important;
     }
-    /* الأزرار والروابط فقط تستجيب للمس */
-    .fab-social a,
-    .fab-social button{
+    /* الزر الرئيسي فقط دائماً قابل للضغط */
+    .fab-social > button{
+      pointer-events: auto !important;
+    }
+    /* قائمة التواصل تظهر فقط عند الفتح */
+    .fab-menu{
+      pointer-events: none !important;
+      display: none !important;
+    }
+    .fab-menu.is-open{
+      display: flex !important;
+      pointer-events: none !important;
+    }
+    .fab-menu.is-open a{
       pointer-events: auto !important;
       direction: rtl;
     }
     .fab-social span,
     .fab-social svg{
-      pointer-events: none;
+      pointer-events: none !important;
     }
   </style>
 </head>
@@ -344,7 +351,7 @@
                                 <Icon d={I.wa} className="w-5 h-5"/>
                               </a>
                             )}
-                            <button onClick={e=>{e.stopPropagation();addToCart(p);}} className="w-10 h-10 rounded-full bg-gold-500/20 hover:bg-gold-500 text-gold-300 hover:text-charcoal flex items-center justify-center transition">
+                            <button type="button" onClick={e=>{e.preventDefault();e.stopPropagation();addToCart(p);}} className="w-10 h-10 rounded-full bg-gold-500/20 hover:bg-gold-500 text-gold-300 hover:text-charcoal flex items-center justify-center transition">
                               <Icon d={I.plus}/>
                             </button>
                           </div>
@@ -423,7 +430,7 @@
                     <Icon d={I.wa} className="w-5 h-5"/> واتساب
                   </a>
                 )}
-                <button onClick={()=>{addToCart(selectedProduct);setSelectedProduct(null);setCartOpen(true);}} className="flex-1 py-3.5 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm flex items-center justify-center gap-2">
+                <button type="button" onClick={(e)=>{e.preventDefault();e.stopPropagation();const p=selectedProduct;if(p){addToCart(p);setSelectedProduct(null);setTimeout(()=>setCartOpen(true),50);}}} className="flex-1 py-3.5 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm flex items-center justify-center gap-2">
                   <Icon d={I.cart}/> السلة
                 </button>
               </div>
@@ -643,7 +650,7 @@
                     {/* Floating social menu - luxury */}
           {(settings.whatsapp||settings.facebook||settings.instagram) && (
             <div className="fab-social flex flex-col items-start gap-3">
-              <div className={`flex flex-col gap-2.5 transition-all duration-300 origin-bottom ${fabOpen ? "opacity-100 translate-y-0 scale-100 pointer-events-auto" : "opacity-0 translate-y-3 scale-95 pointer-events-none"}`}>
+              <div className={`fab-menu flex-col gap-2.5 transition-all duration-300 origin-bottom ${fabOpen ? "is-open opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-3 scale-95"}`}>
                 {settings.whatsapp && (
                   <a href={`https://wa.me/${String(settings.whatsapp).replace(/[^0-9+]/g,"")}`} target="_blank" rel="noopener"
                     className="group flex items-center gap-3 bg-[#0d0b09]/95 border border-green-500/30 backdrop-blur-xl pl-2 pr-4 py-2 rounded-full shadow-xl shadow-black/40 hover:border-green-400/60 hover:scale-105 transition-all">
