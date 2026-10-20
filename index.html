@@ -22,15 +22,22 @@
     .cat-card:hover img{transform:scale(1.08)}
     .cat-card,.product-card{transition:all .35s cubic-bezier(.22,1,.36,1)}
     .product-card:hover{transform:translateY(-6px)}
-    /* زر التواصل - أقصى يسار الشاشة (موبايل + كمبيوتر) */
+    /* زر التواصل العائم — أسفل اليسار نهائياً */
     .fab-social{
       position: fixed !important;
-      left: 10px !important;
+      left: 20px !important;
       right: auto !important;
-      bottom: max(20px, env(safe-area-inset-bottom, 20px)) !important;
+      bottom: 20px !important;
+      top: auto !important;
       z-index: 9999 !important;
       margin: 0 !important;
+      padding: 0 !important;
       transform: none !important;
+      inset: auto auto 20px 20px !important;
+      direction: ltr !important;
+    }
+    .fab-social *{
+      direction: rtl;
     }
   </style>
 </head>
