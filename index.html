@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>LUXE BAGS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: { 50:'#fbf8f1',100:'#f5edd8',200:'#e9d7a8',300:'#dbbc72',400:'#cfa14a',500:'#c08a33',600:'#a66d28',700:'#855223',800:'#6e4323',900:'#5c3921' },
+            charcoal: '#1a1714'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    *{font-family:'Cairo',sans-serif}
+    .font-playfair{font-family:'Playfair Display',serif}
+    body{background:#0f0d0b;color:#f5f0e8}
+    .glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08)}
+    .gold-text{background:linear-gradient(90deg,#dbbc72,#c08a33);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .cat-card{transition:all .35s cubic-bezier(.22,1,.36,1)}
+    .cat-card:hover{transform:translateY(-8px);box-shadow:0 20px 40px -10px rgba(192,138,51,.3)}
+    .cat-card:hover img{transform:scale(1.08)}
+    .product-card:hover{transform:translateY(-6px);box-shadow:0 25px 50px -12px rgba(192,138,51,.25)}
+    .fab-menu{transition:all .3s cubic-bezier(.22,1,.36,1);transform-origin:bottom left}
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel">
+    // Full site code is in the local file - this is a deployment placeholder.
+    // Please use the Vercel direct deploy with full content.
+    document.getElementById('root').innerHTML = '<div style="padding:40px;text-align:center;font-family:Cairo,sans-serif;color:#dbbc72"><h1>LUXE BAGS</h1><p>جاري رفع النسخة الكاملة...</p></div>';
+  </script>
+</body>
+</html>
