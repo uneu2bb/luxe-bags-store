@@ -152,6 +152,8 @@
       const [branchForm, setBranchForm] = useState({ name:"", address:"", phone:"" });
       const [saving, setSaving] = useState(false);
       const [fabOpen, setFabOpen] = useState(false);
+      const [editingProduct, setEditingProduct] = useState(null);
+      const [editingCat, setEditingCat] = useState(null);
 
       const loadData = async () => {
         setLoading(true); setError("");
@@ -307,14 +309,23 @@
                       <div className="p-4">
                         <h3 className="font-semibold text-gold-100 text-sm mb-1">{p.name}</h3>
                         {p.description && <p className="text-xs text-gold-600 mb-3 line-clamp-1">{p.description}</p>}
-                        <div className="flex items-center justify-between">
-                          <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
                             <p className="font-bold gold-text">{formatPrice(currency==="TRY"?p.price_try:p.price_syp,currency)}</p>
                             <p className="text-[10px] text-gold-700">{currency==="TRY"?formatPrice(p.price_syp,"SYP"):formatPrice(p.price_try,"TRY")}</p>
                           </div>
-                          <button onClick={e=>{e.stopPropagation();addToCart(p);}} className="w-10 h-10 rounded-full bg-gold-500/20 hover:bg-gold-500 text-gold-300 hover:text-charcoal flex items-center justify-center">
-                            <Icon d={I.plus}/>
-                          </button>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {settings.whatsapp && (
+                              <a href={`https://wa.me/${String(settings.whatsapp).replace(/[^0-9+]/g,"")}?text=${encodeURIComponent("مرحباً، مهتمة بـ "+p.name+" من "+(settings.site_name||"LUXE BAGS"))}`}
+                                target="_blank" rel="noopener" onClick={e=>e.stopPropagation()}
+                                className="w-10 h-10 rounded-full bg-green-500/20 hover:bg-green-500 text-green-400 hover:text-white flex items-center justify-center transition">
+                                <Icon d={I.wa} className="w-5 h-5"/>
+                              </a>
+                            )}
+                            <button onClick={e=>{e.stopPropagation();addToCart(p);}} className="w-10 h-10 rounded-full bg-gold-500/20 hover:bg-gold-500 text-gold-300 hover:text-charcoal flex items-center justify-center transition">
+                              <Icon d={I.plus}/>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -382,9 +393,18 @@
                   {selectedProduct.description && <p className="text-sm text-gold-300/70 mb-4">{selectedProduct.description}</p>}
                   <p className="text-2xl font-bold gold-text mb-1">{formatPrice(currency==="TRY"?selectedProduct.price_try:selectedProduct.price_syp,currency)}</p>
                   <p className="text-xs text-gold-600 mb-5">{currency==="TRY"?formatPrice(selectedProduct.price_syp,"SYP"):formatPrice(selectedProduct.price_try,"TRY")}</p>
-                  <button onClick={()=>{addToCart(selectedProduct);setSelectedProduct(null);}} className="w-full py-3.5 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm flex items-center justify-center gap-2">
-                    <Icon d={I.cart}/> أضيفي إلى السلة
-                  </button>
+                  <div className="flex gap-2">
+                {settings.whatsapp && (
+                  <a href={`https://wa.me/${String(settings.whatsapp).replace(/[^0-9+]/g,"")}?text=${encodeURIComponent("مرحباً، مهتمة بـ "+selectedProduct.name+" من "+(settings.site_name||"LUXE BAGS"))}`}
+                    target="_blank" rel="noopener"
+                    className="flex-1 py-3.5 rounded-xl bg-green-600 text-white font-bold text-sm flex items-center justify-center gap-2">
+                    <Icon d={I.wa} className="w-5 h-5"/> واتساب
+                  </a>
+                )}
+                <button onClick={()=>{addToCart(selectedProduct);setSelectedProduct(null);}} className="flex-1 py-3.5 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm flex items-center justify-center gap-2">
+                  <Icon d={I.cart}/> السلة
+                </button>
+              </div>
                 </div>
               </div>
             </div>
@@ -475,6 +495,43 @@
                         } catch(e){alert(e.message)}
                         setSaving(false);
                       }} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm">إضافة منتج</button>
+                      <p className="text-xs text-gold-500 font-medium pt-3">المنتجات الحالية — عدّلي بحرية</p>
+                      {categories.flatMap(cat => (cat.products||[]).map(p => (
+                        <div key={p.id} className="p-3 rounded-xl bg-white/5 border border-gold-800/20 space-y-2">
+                          {editingProduct===p.id ? (
+                            <>
+                              <input defaultValue={p.name} id={`p-name-${p.id}`} className="w-full bg-white/5 border border-gold-600/40 rounded-lg px-3 py-2 text-sm text-gold-100 outline-none" placeholder="الاسم"/>
+                              <div className="grid grid-cols-2 gap-2">
+                                <input type="number" defaultValue={p.price_try} id={`p-try-${p.id}`} className="w-full bg-white/5 border border-gold-600/40 rounded-lg px-3 py-2 text-sm text-gold-100 outline-none" placeholder="₺"/>
+                                <input type="number" defaultValue={p.price_syp} id={`p-syp-${p.id}`} className="w-full bg-white/5 border border-gold-600/40 rounded-lg px-3 py-2 text-sm text-gold-100 outline-none" placeholder="ل.س"/>
+                              </div>
+                              <input type="file" accept="image/*" className="w-full text-xs text-gold-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-gold-500/20 file:text-gold-300"
+                                onChange={async(e)=>{const f=e.target.files?.[0]; if(f) await handleImageFile(f, async(url)=>{ await fetch(`${SB_URL}/rest/v1/products?id=eq.${p.id}`,{method:"PATCH",headers,body:JSON.stringify({image:url})}); await loadData();});}}/>
+                              <div className="flex gap-2">
+                                <button onClick={async()=>{
+                                  await fetch(`${SB_URL}/rest/v1/products?id=eq.${p.id}`,{method:"PATCH",headers,body:JSON.stringify({
+                                    name: document.getElementById(`p-name-${p.id}`).value,
+                                    price_try: +document.getElementById(`p-try-${p.id}`).value||0,
+                                    price_syp: +document.getElementById(`p-syp-${p.id}`).value||0,
+                                  })});
+                                  setEditingProduct(null); await loadData(); alert("تم حفظ المنتج ✓");
+                                }} className="flex-1 py-2 rounded-lg bg-gold-500 text-charcoal text-xs font-bold">حفظ</button>
+                                <button onClick={()=>setEditingProduct(null)} className="px-3 py-2 rounded-lg bg-white/5 text-gold-500 text-xs">إلغاء</button>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              <img src={p.image||"https://placehold.co/80/1a1714/c08a33?text=+"} className="w-14 h-14 rounded-xl object-cover border border-gold-700/30"/>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gold-100 truncate">{p.name}</p>
+                                <p className="text-[11px] text-gold-600">{cat.title} • ₺{Number(p.price_try).toLocaleString()}</p>
+                              </div>
+                              <button onClick={()=>setEditingProduct(p.id)} className="w-9 h-9 rounded-full bg-gold-500/15 text-gold-300 flex items-center justify-center"><Icon d={I.edit} className="w-4 h-4"/></button>
+                              <button onClick={async()=>{if(confirm("حذف المنتج؟")){await sbDelete("products",p.id);await loadData();}}} className="w-9 h-9 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center"><Icon d={I.trash} className="w-4 h-4"/></button>
+                            </div>
+                          )}
+                        </div>
+                      )))}
                     </>
                   )}
                   {tab==="categories" && (
@@ -495,10 +552,32 @@
                         alert("تمت الإضافة ✓");
                       }} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm">إضافة قسم</button>
                       {categories.map(c=>(
-                        <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
-                          <img src={c.image} className="w-12 h-12 rounded-lg object-cover"/>
-                          <div className="flex-1"><p className="text-sm text-gold-100">{c.title}</p><p className="text-[11px] text-gold-600">{(c.products||[]).length} منتج</p></div>
-                          <button onClick={async()=>{if(confirm("حذف؟")){await sbDelete("categories",c.id);await loadData();}}} className="text-red-400/70"><Icon d={I.trash} className="w-4 h-4"/></button>
+                        <div key={c.id} className="p-3 rounded-xl bg-white/5 border border-gold-800/20 space-y-2">
+                          {editingCat===c.id ? (
+                            <>
+                              <input defaultValue={c.title} id={`cat-title-${c.id}`} className="w-full bg-white/5 border border-gold-600/40 rounded-lg px-3 py-2 text-sm text-gold-100 outline-none"/>
+                              <input type="file" accept="image/*" className="w-full text-xs text-gold-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-gold-500/20 file:text-gold-300"
+                                onChange={async(e)=>{const f=e.target.files?.[0]; if(f) await handleImageFile(f, async(url)=>{ await fetch(`${SB_URL}/rest/v1/categories?id=eq.${c.id}`,{method:"PATCH",headers,body:JSON.stringify({image:url})}); await loadData();});}}/>
+                              <div className="flex gap-2">
+                                <button onClick={async()=>{
+                                  const t=document.getElementById(`cat-title-${c.id}`).value;
+                                  await fetch(`${SB_URL}/rest/v1/categories?id=eq.${c.id}`,{method:"PATCH",headers,body:JSON.stringify({title:t})});
+                                  setEditingCat(null); await loadData(); alert("تم حفظ القسم ✓");
+                                }} className="flex-1 py-2 rounded-lg bg-gold-500 text-charcoal text-xs font-bold">حفظ</button>
+                                <button onClick={()=>setEditingCat(null)} className="px-3 py-2 rounded-lg bg-white/5 text-gold-500 text-xs">إلغاء</button>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              <img src={c.image||"https://placehold.co/80/1a1714/c08a33?text=+"} className="w-14 h-14 rounded-xl object-cover border border-gold-700/30"/>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gold-100 truncate">{c.title}</p>
+                                <p className="text-[11px] text-gold-600">{(c.products||[]).length} منتج</p>
+                              </div>
+                              <button onClick={()=>setEditingCat(c.id)} className="w-9 h-9 rounded-full bg-gold-500/15 text-gold-300 flex items-center justify-center"><Icon d={I.edit} className="w-4 h-4"/></button>
+                              <button onClick={async()=>{if(confirm("حذف القسم؟")){await sbDelete("categories",c.id);await loadData();}}} className="w-9 h-9 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center"><Icon d={I.trash} className="w-4 h-4"/></button>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </>
