@@ -198,6 +198,34 @@
         showToast("خطأ في ضغط الصورة", "err");
       }
     }
+    
+    const parseColors = (raw) => {
+      if (!raw) return [];
+      if (Array.isArray(raw)) return raw.filter(Boolean);
+      return String(raw).split(/[,،|]/).map(s => s.trim()).filter(Boolean);
+    };
+    const colorHex = (name) => {
+      const n = String(name).trim().toLowerCase();
+      const map = {
+        "أسود":"#1a1a1a","اسود":"#1a1a1a","black":"#1a1a1a",
+        "أبيض":"#f5f5f5","ابيض":"#f5f5f5","white":"#f5f5f5",
+        "بني":"#6b3e26","brown":"#6b3e26","بيج":"#d4c4a8","beige":"#d4c4a8",
+        "ذهبي":"#c08a33","gold":"#c08a33","ذهب":"#c08a33",
+        "فضي":"#c0c0c0","silver":"#c0c0c0",
+        "أحمر":"#b91c1c","احمر":"#b91c1c","red":"#b91c1c",
+        "وردي":"#e879a0","pink":"#e879a0",
+        "أزرق":"#1e3a8a","ازرق":"#1e3a8a","blue":"#1e3a8a",
+        "أخضر":"#166534","اخضر":"#166534","green":"#166534",
+        "رمادي":"#6b7280","gray":"#6b7280","كحلي":"#1e293b",
+        "نود":"#e8d5c4","nude":"#e8d5c4","عنابي":"#7f1d1d",
+        "برتقالي":"#c2410c","أصفر":"#ca8a04","اصفر":"#ca8a04",
+        "بنفسجي":"#6b21a8","كريمي":"#f5e6d3","جمل":"#c4a574","زيتي":"#3f6212"
+      };
+      for (const k of Object.keys(map)) { if (n.includes(k) || k.includes(n)) return map[k]; }
+      let h = 0; for (let i = 0; i < n.length; i++) h = n.charCodeAt(i) + ((h << 5) - h);
+      return `hsl(${Math.abs(h) % 360},45%,45%)`;
+    };
+
     const formatPrice = (n, cur) => cur === "TRY" ? `₺${Number(n).toLocaleString("tr-TR")}` : `${Number(n).toLocaleString("ar-SY")} ل.س`;
     const Icon = ({ d, className="w-5 h-5" }) => (
       <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>
@@ -229,12 +257,14 @@
       const [adminOpen, setAdminOpen] = useState(false);
       const [activeCategory, setActiveCategory] = useState(null);
       const [selectedProduct, setSelectedProduct] = useState(null);
+      const [selectedColor, setSelectedColor] = useState("");
+      const [adminCatFilter, setAdminCatFilter] = useState("");
       const [toast, setToast] = useState(null);
       const [adminPass, setAdminPass] = useState("");
       const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem("luxe_admin_ok")==="1");
       const [tab, setTab] = useState("settings");
       const [sForm, setSForm] = useState({});
-      const [form, setForm] = useState({ category_id:"", name:"", image:"", price_try:"", price_syp:"", description:"" });
+      const [form, setForm] = useState({ category_id:"", name:"", image:"", price_try:"", price_syp:"", description:"", colors:"" });
       const [newCat, setNewCat] = useState({ title:"", image:"" });
       const [branchForm, setBranchForm] = useState({ name:"", address:"", phone:"" });
       const [saving, setSaving] = useState(false);
@@ -278,28 +308,31 @@
         cart.forEach((item, i) => {
           const price = currency === "TRY" ? item.price_try : item.price_syp;
           const cur = currency === "TRY" ? "₺" : "ل.س";
-          msg += `${i+1}) ${item.name}%0A   الكمية: ${item.qty} × ${Number(price).toLocaleString()} ${cur}%0A%0A`;
+          msg += `${i+1}) ${item.name}${item.color ? " ("+item.color+")" : ""}%0A   الكمية: ${item.qty} × ${Number(price).toLocaleString()} ${cur}%0A%0A`;
         });
         const total = currency === "TRY" ? totalTRY : totalSYP;
         const cur = currency === "TRY" ? "₺" : "ل.س";
         msg += `——————————%0Aالإجمالي: ${Number(total).toLocaleString()} ${cur}%0A%0Aشكراً لكم`;
         window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
       };
-      const addToCart = (p) => {
+      const addToCart = (p, color) => {
         if (!p || !p.id) { showToast("خطأ في المنتج"); return; }
+        const col = color || selectedColor || "";
+        const key = String(p.id) + "::" + col;
         setCart(prev => {
-          const ex = prev.find(i => String(i.id) === String(p.id));
-          if (ex) return prev.map(i => String(i.id) === String(p.id) ? {...i, qty:i.qty+1} : i);
+          const ex = prev.find(i => (String(i.id) + "::" + (i.color||"")) === key);
+          if (ex) return prev.map(i => (String(i.id) + "::" + (i.color||"")) === key ? {...i, qty:i.qty+1} : i);
           return [...prev, {
             id: p.id,
             name: p.name,
             image: p.image,
             price_try: Number(p.price_try)||0,
             price_syp: Number(p.price_syp)||0,
+            color: col,
             qty: 1
           }];
         });
-        showToast("تمت الإضافة ✓");
+        showToast(col ? `تمت الإضافة (${col}) ✓` : "تمت الإضافة ✓");
       };
       const cartCount = cart.reduce((s,i)=>s+i.qty,0);
       const totalTRY = cart.reduce((s,i)=>s+Number(i.price_try||0)*i.qty,0);
@@ -406,7 +439,7 @@
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {(activeCategory.products||[]).map(p=>(
-                    <div key={p.id} className="product-card card-3d rounded-2xl overflow-hidden cursor-pointer pressable" onClick={()=>setSelectedProduct(p)}>
+                    <div key={p.id} className="product-card card-3d rounded-2xl overflow-hidden cursor-pointer pressable" onClick={()=>{ setSelectedProduct(p); const cols=parseColors(p.colors); setSelectedColor(cols[0]||""); }}>
                       <div className="relative h-52 overflow-hidden">
                         <img src={p.image} className="w-full h-full object-cover" loading="lazy" decoding="async"/>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"/>
@@ -462,7 +495,7 @@
                         <div key={item.id} className="flex gap-3 p-3 rounded-xl bg-white/5">
                           <img src={item.image} className="w-16 h-16 rounded-lg object-cover"/>
                           <div className="flex-1">
-                            <p className="text-sm text-gold-100">{item.name}</p>
+                            <p className="text-sm text-gold-100">{item.name}{item.color ? ` · ${item.color}` : ""}</p>
                             <p className="text-xs text-gold-500">{formatPrice(currency==="TRY"?item.price_try:item.price_syp,currency)}</p>
                             <div className="flex items-center gap-2 mt-2">
                               <button onClick={()=>setCart(c=>item.qty<=1?c.filter(i=>i.id!==item.id):c.map(i=>i.id===item.id?{...i,qty:i.qty-1}:i))} className="w-6 h-6 rounded bg-white/10 flex items-center justify-center"><Icon d={I.minus} className="w-3 h-3"/></button>
@@ -495,18 +528,34 @@
                 <img src={selectedProduct.image} className="w-full h-64 object-cover"/>
                 <div className="p-6">
                   <h2 className="text-xl font-bold text-gold-100 mb-2">{selectedProduct.name}</h2>
-                  {selectedProduct.description && <p className="text-sm text-gold-300/70 mb-4">{selectedProduct.description}</p>}
+                  {selectedProduct.description && <p className="text-sm text-gold-300/70 mb-3">{selectedProduct.description}</p>}
+                  {parseColors(selectedProduct.colors).length > 0 && (
+                    <div className="mb-5">
+                      <p className="text-xs text-gold-500 mb-2.5 tracking-wide">الألوان المتوفرة</p>
+                      <div className="flex flex-wrap gap-2.5">
+                        {parseColors(selectedProduct.colors).map(col => (
+                          <button key={col} type="button" onClick={()=>setSelectedColor(col)}
+                            className={`group flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border transition-all duration-300 ${selectedColor===col ? "border-gold-400 bg-gold-500/15 shadow-lg shadow-gold-500/20 scale-105" : "border-white/10 bg-white/5 hover:border-gold-600/40"}`}>
+                            <span className={`w-6 h-6 rounded-full border-2 shadow-inner ${selectedColor===col ? "border-gold-300 ring-2 ring-gold-500/40" : "border-white/20"}`}
+                              style={{background: colorHex(col), boxShadow: selectedColor===col ? `0 0 12px ${colorHex(col)}88` : "none"}}/>
+                            <span className={`text-xs font-medium ${selectedColor===col ? "text-gold-200" : "text-gold-500"}`}>{col}</span>
+                          </button>
+                        ))}
+                      </div>
+                      {selectedColor && <p className="text-[11px] text-gold-600 mt-2">اللون المختار: <span className="text-gold-300 font-bold">{selectedColor}</span></p>}
+                    </div>
+                  )}
                   <p className="text-2xl font-bold gold-text mb-1">{formatPrice(currency==="TRY"?selectedProduct.price_try:selectedProduct.price_syp,currency)}</p>
                   <p className="text-xs text-gold-600 mb-5">{currency==="TRY"?formatPrice(selectedProduct.price_syp,"SYP"):formatPrice(selectedProduct.price_try,"TRY")}</p>
                   <div className="flex gap-2">
                 {settings.whatsapp && (
-                  <a href={`https://wa.me/${String(settings.whatsapp).replace(/[^0-9+]/g,"")}?text=${encodeURIComponent("مرحباً، مهتمة بـ "+selectedProduct.name+" من "+(settings.site_name||"LUXE BAGS"))}`}
+                  <a href={`https://wa.me/${String(settings.whatsapp).replace(/[^0-9+]/g,"")}?text=${encodeURIComponent("مرحباً، مهتمة بـ "+selectedProduct.name+(selectedColor?" اللون "+selectedColor:"")+" من "+(settings.site_name||"LUXE BAGS"))}`}
                     target="_blank" rel="noopener"
                     className="flex-1 py-3.5 rounded-xl bg-green-600 text-white font-bold text-sm flex items-center justify-center gap-2 btn-3d pressable">
                     <Icon d={I.wa} className="w-5 h-5"/> واتساب
                   </a>
                 )}
-                <button type="button" onClick={(e)=>{e.preventDefault();e.stopPropagation();const p=selectedProduct;if(p){addToCart(p);setSelectedProduct(null);setTimeout(()=>setCartOpen(true),50);}}} className="flex-1 py-3.5 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm flex items-center justify-center gap-2 btn-3d pressable">
+                <button type="button" onClick={(e)=>{e.preventDefault();e.stopPropagation();const p=selectedProduct;if(p){addToCart(p, selectedColor);setSelectedProduct(null);setTimeout(()=>setCartOpen(true),50);}}} className="flex-1 py-3.5 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm flex items-center justify-center gap-2 btn-3d pressable">
                   <Icon d={I.cart}/> السلة
                 </button>
               </div>
@@ -589,19 +638,49 @@
                         <input type="number" value={form.price_try} onChange={e=>setForm({...form,price_try:e.target.value})} placeholder="سعر ₺" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
                         <input type="number" value={form.price_syp} onChange={e=>setForm({...form,price_syp:e.target.value})} placeholder="سعر ل.س" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
                       </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs text-gold-500">الألوان المتوفرة (افصلي بفاصلة: أسود، بني، ذهبي)</label>
+                        <input value={form.colors||""} onChange={e=>setForm({...form,colors:e.target.value})} placeholder="مثال: أسود، بني، بيج، ذهبي" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
+                        {parseColors(form.colors).length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {parseColors(form.colors).map(col => (
+                              <span key={col} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/5 border border-gold-800/30 text-[11px] text-gold-300">
+                                <span className="w-3 h-3 rounded-full border border-white/20" style={{background:colorHex(col)}}/>
+                                {col}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <button disabled={saving} onClick={async()=>{
                         if(!form.name||!form.category_id) return showToast("املئي الحقول المطلوبة", "err");
                         setSaving(true);
                         try {
-                          await sbPost("products",{category_id:form.category_id,name:form.name,image:form.image||"",price_try:+form.price_try||0,price_syp:+form.price_syp||0,description:form.description||""});
+                          await sbPost("products",{category_id:form.category_id,name:form.name,image:form.image||"",price_try:+form.price_try||0,price_syp:+form.price_syp||0,description:form.description||"",colors:form.colors||""});
                           await loadData();
                           setForm({category_id:form.category_id,name:"",image:"",price_try:"",price_syp:"",description:""});
                           showToast("تمت الإضافة ✓");
                         } catch(e){showToast(String(e.message||e), "err")}
                         setSaving(false);
                       }} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm">إضافة منتج</button>
-                      <p className="text-xs text-gold-500 font-medium pt-3">المنتجات الحالية — عدّلي بحرية</p>
-                      {categories.flatMap(cat => (cat.products||[]).map(p => (
+                      <div className="pt-3 space-y-3">
+                        <p className="text-xs text-gold-500 font-medium">المنتجات حسب القسم</p>
+                        <select value={adminCatFilter} onChange={e=>setAdminCatFilter(e.target.value)}
+                          className="w-full bg-white/5 border border-gold-700/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none">
+                          <option value="" className="bg-charcoal">كل الأقسام</option>
+                          {categories.map(cat => (
+                            <option key={cat.id} value={cat.id} className="bg-charcoal">{cat.title} ({(cat.products||[]).length})</option>
+                          ))}
+                        </select>
+                        {(adminCatFilter ? categories.filter(cat => String(cat.id)===String(adminCatFilter)) : categories).map(cat => (
+                          <div key={cat.id} className="space-y-2">
+                            <div className="flex items-center gap-2 pt-2">
+                              <div className="h-px flex-1 bg-gold-800/40"/>
+                              <span className="text-[11px] font-bold text-gold-400 px-2">{cat.title}</span>
+                              <div className="h-px flex-1 bg-gold-800/40"/>
+                            </div>
+                            {(cat.products||[]).length === 0 && <p className="text-[11px] text-gold-700 text-center py-2">لا منتجات في هذا القسم</p>}
+                            {(cat.products||[]).map(p => (
                         <div key={p.id} className="p-3 rounded-xl bg-white/5 border border-gold-800/20 space-y-2">
                           {String(editingProduct)===String(p.id) ? (
                             <>
@@ -610,6 +689,7 @@
                                 <input type="number" defaultValue={p.price_try} id={`p-try-${p.id}`} className="w-full bg-white/5 border border-gold-600/40 rounded-lg px-3 py-2 text-sm text-gold-100 outline-none" placeholder="₺"/>
                                 <input type="number" defaultValue={p.price_syp} id={`p-syp-${p.id}`} className="w-full bg-white/5 border border-gold-600/40 rounded-lg px-3 py-2 text-sm text-gold-100 outline-none" placeholder="ل.س"/>
                               </div>
+                              <input defaultValue={p.colors||""} id={`p-colors-${p.id}`} className="w-full bg-white/5 border border-gold-600/40 rounded-lg px-3 py-2 text-sm text-gold-100 outline-none" placeholder="الألوان: أسود، بني، ذهبي"/>
                               <input type="file" accept="image/*" className="w-full text-xs text-gold-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-gold-500/20 file:text-gold-300"
                                 onChange={async(e)=>{const f=e.target.files?.[0]; if(f) await handleImageFile(f, async(url)=>{ await fetch(`${SB_URL}/rest/v1/products?id=eq.${p.id}`,{method:"PATCH",headers,body:JSON.stringify({image:url})}); await loadData();});}}/>
                               <div className="flex gap-2">
@@ -618,6 +698,7 @@
                                     name: document.getElementById(`p-name-${p.id}`).value,
                                     price_try: +document.getElementById(`p-try-${p.id}`).value||0,
                                     price_syp: +document.getElementById(`p-syp-${p.id}`).value||0,
+                                    colors: (document.getElementById(`p-colors-${p.id}`)||{}).value||"",
                                   })});
                                   setEditingProduct(null); await loadData(); showToast("تم حفظ المنتج ✓");
                                 }} className="flex-1 py-2 rounded-lg bg-gold-500 text-charcoal text-xs font-bold">حفظ</button>
@@ -629,14 +710,17 @@
                               <img src={p.image||"https://placehold.co/80/1a1714/c08a33?text=+"} className="w-14 h-14 rounded-xl object-cover border border-gold-700/30"/>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gold-100 truncate">{p.name}</p>
-                                <p className="text-[11px] text-gold-600">{cat.title} • ₺{Number(p.price_try).toLocaleString()}</p>
+                                <p className="text-[11px] text-gold-600">₺{Number(p.price_try).toLocaleString()}{p.colors ? ` · ${p.colors}` : ""}</p>
                               </div>
                               <button onClick={()=>setEditingProduct(p.id)} className="w-9 h-9 rounded-full bg-gold-500/15 text-gold-300 flex items-center justify-center"><Icon d={I.edit} className="w-4 h-4"/></button>
                               <button onClick={()=>setDeleteConfirm({type:"product",id:p.id,name:p.name})} className="w-9 h-9 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center"><Icon d={I.trash} className="w-4 h-4"/></button>
                             </div>
                           )}
                         </div>
-                      )))}
+                            ))}
+                          </div>
+                        ))}
+                      </div>
                     </>
                   )}
                   {tab==="categories" && (
