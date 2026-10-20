@@ -22,7 +22,7 @@
     .cat-card:hover img{transform:scale(1.08)}
     .cat-card,.product-card{transition:all .35s cubic-bezier(.22,1,.36,1)}
     .product-card:hover{transform:translateY(-6px)}
-    /* زر التواصل العائم — أسفل اليسار نهائياً */
+    /* زر التواصل العائم — أسفل اليسار، حجم الأزرار فقط */
     .fab-social{
       position: fixed !important;
       left: 20px !important;
@@ -32,12 +32,25 @@
       z-index: 9999 !important;
       margin: 0 !important;
       padding: 0 !important;
+      width: auto !important;
+      height: auto !important;
+      max-width: none !important;
+      max-height: none !important;
       transform: none !important;
       inset: auto auto 20px 20px !important;
       direction: ltr !important;
+      /* الحاوية شفافة للمس — ما تحجب المنتجات */
+      pointer-events: none !important;
     }
-    .fab-social *{
+    /* الأزرار والروابط فقط تستجيب للمس */
+    .fab-social a,
+    .fab-social button{
+      pointer-events: auto !important;
       direction: rtl;
+    }
+    .fab-social span,
+    .fab-social svg{
+      pointer-events: none;
     }
   </style>
 </head>
