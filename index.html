@@ -58,6 +58,42 @@
       const r = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, { method:"DELETE", headers });
       if (!r.ok) throw new Error(await r.text());
     }
+
+    // Compress image client-side (keeps quality, reduces size)
+    function compressImage(file, maxW = 1200, quality = 0.82) {
+      return new Promise((resolve, reject) => {
+        if (!file || !file.type.startsWith("image/")) return resolve("");
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("فشل قراءة الصورة"));
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            let w = img.width, h = img.height;
+            if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+            const canvas = document.createElement("canvas");
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL("image/jpeg", quality);
+            resolve(dataUrl);
+          };
+          img.onerror = () => reject(new Error("فشل تحميل الصورة"));
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleImageFile(file, onDone) {
+      if (!file) return;
+      if (file.size > 8 * 1024 * 1024) { alert("الصورة كبيرة جداً (الحد 8 ميجا)"); return; }
+      try {
+        const compressed = await compressImage(file, 1200, 0.82);
+        if (compressed) onDone(compressed);
+      } catch (e) {
+        alert("خطأ في ضغط الصورة: " + e.message);
+      }
+    }
     const formatPrice = (n, cur) => cur === "TRY" ? `₺${Number(n).toLocaleString("tr-TR")}` : `${Number(n).toLocaleString("ar-SY")} ل.س`;
     const Icon = ({ d, className="w-5 h-5" }) => (
       <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>
@@ -128,7 +164,8 @@
         if (cart.length === 0) return;
         const phone = String(settings.whatsapp || "").replace(/[^0-9+]/g, "");
         if (!phone) { alert("أضف رقم واتساب من لوحة التحكم أولاً"); return; }
-        let msg = "مرحباً، أود طلب التالي من LUXE BAGS:%0A%0A";
+        const storeName = settings.site_name || "LUXE BAGS";
+        let msg = `مرحباً، أود طلب التالي من ${storeName}:%0A%0A`;
         cart.forEach((item, i) => {
           const price = currency === "TRY" ? item.price_try : item.price_syp;
           const cur = currency === "TRY" ? "₺" : "ل.س";
@@ -205,7 +242,7 @@
                   {categories.map(cat => (
                     <div key={cat.id} onClick={()=>setActiveCategory(cat)} className="cat-card relative rounded-2xl overflow-hidden cursor-pointer glass border border-gold-800/30">
                       <div className="relative h-44 sm:h-52 overflow-hidden">
-                        <img src={cat.image||"https://placehold.co/400x300/1a1714/c08a33?text=قسم"} className="w-full h-full object-cover transition-transform duration-500" onError={e=>e.target.src="https://placehold.co/400x300/1a1714/c08a33?text=Image"}/>
+                        <img src={cat.image||"https://placehold.co/400x300/1a1714/c08a33?text=قسم"} className="w-full h-full object-cover transition-transform duration-500" loading="lazy" decoding="async" onError={e=>e.target.src="https://placehold.co/400x300/1a1714/c08a33?text=Image"}/>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"/>
                         <div className="absolute bottom-0 right-0 left-0 p-3">
                           <h3 className="text-sm font-bold text-gold-100">{cat.title}</h3>
@@ -247,7 +284,7 @@
                   {(activeCategory.products||[]).map(p=>(
                     <div key={p.id} className="product-card rounded-2xl overflow-hidden glass border border-gold-800/20 cursor-pointer" onClick={()=>setSelectedProduct(p)}>
                       <div className="relative h-52 overflow-hidden">
-                        <img src={p.image} className="w-full h-full object-cover"/>
+                        <img src={p.image} className="w-full h-full object-cover" loading="lazy" decoding="async"/>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"/>
                       </div>
                       <div className="p-4">
@@ -371,7 +408,13 @@
                     <>
                       <input value={sForm.site_name||""} onChange={e=>setSForm({...sForm,site_name:e.target.value})} placeholder="اسم المتجر" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
                       <input value={sForm.tagline||""} onChange={e=>setSForm({...sForm,tagline:e.target.value})} placeholder="الشعار" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
-                      <input value={sForm.logo||""} onChange={e=>setSForm({...sForm,logo:e.target.value})} placeholder="رابط اللوجو" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
+                      <div className="space-y-1.5">
+                        <label className="text-xs text-gold-500">اللوجو (رفع من الجهاز)</label>
+                        <input type="file" accept="image/*" className="w-full text-xs text-gold-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-gold-500/20 file:text-gold-300"
+                          onChange={async (e)=>{ const f=e.target.files?.[0]; if(f) await handleImageFile(f, (url)=>setSForm({...sForm, logo:url})); }}/>
+                        {sForm.logo && <img src={sForm.logo} className="w-14 h-14 rounded-full object-cover border border-gold-600/40" alt=""/>}
+                        <input value={sForm.logo && sForm.logo.startsWith("http") ? sForm.logo : ""} onChange={e=>setSForm({...sForm,logo:e.target.value})} placeholder="أو رابط اللوجو" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
+                      </div>
                       <textarea value={sForm.header_desc||""} onChange={e=>setSForm({...sForm,header_desc:e.target.value})} placeholder="وصف أعلى" rows={2} className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none resize-none"/>
                       <textarea value={sForm.footer_desc||""} onChange={e=>setSForm({...sForm,footer_desc:e.target.value})} placeholder="وصف أسفل" rows={2} className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none resize-none"/>
                       <input value={sForm.admin_password||""} onChange={e=>setSForm({...sForm,admin_password:e.target.value})} placeholder="كلمة السر" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
@@ -393,7 +436,13 @@
                         {categories.map(c=><option key={c.id} value={c.id} className="bg-charcoal">{c.title}</option>)}
                       </select>
                       <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="اسم المنتج" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
-                      <input value={form.image} onChange={e=>setForm({...form,image:e.target.value})} placeholder="رابط الصورة" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
+                      <div className="space-y-1.5">
+                        <label className="text-xs text-gold-500">صورة المنتج (رفع من الجهاز — تُضغط تلقائياً)</label>
+                        <input type="file" accept="image/*" className="w-full text-xs text-gold-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-gold-500/20 file:text-gold-300"
+                          onChange={async (e)=>{ const f=e.target.files?.[0]; if(f) await handleImageFile(f, (url)=>setForm({...form, image:url})); }}/>
+                        {form.image && <img src={form.image} className="w-16 h-16 rounded-lg object-cover border border-gold-700/40" alt=""/>}
+                        <input value={form.image && form.image.startsWith("http") ? form.image : ""} onChange={e=>setForm({...form,image:e.target.value})} placeholder="أو الصقي رابط صورة" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
+                      </div>
                       <div className="grid grid-cols-2 gap-3">
                         <input type="number" value={form.price_try} onChange={e=>setForm({...form,price_try:e.target.value})} placeholder="سعر ₺" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
                         <input type="number" value={form.price_syp} onChange={e=>setForm({...form,price_syp:e.target.value})} placeholder="سعر ل.س" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
@@ -414,7 +463,13 @@
                   {tab==="categories" && (
                     <>
                       <input value={newCat.title} onChange={e=>setNewCat({...newCat,title:e.target.value})} placeholder="اسم القسم" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
-                      <input value={newCat.image} onChange={e=>setNewCat({...newCat,image:e.target.value})} placeholder="رابط صورة القسم" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
+                      <div className="space-y-1.5">
+                        <label className="text-xs text-gold-500">صورة القسم (رفع — ضغط تلقائي)</label>
+                        <input type="file" accept="image/*" className="w-full text-xs text-gold-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-gold-500/20 file:text-gold-300"
+                          onChange={async (e)=>{ const f=e.target.files?.[0]; if(f) await handleImageFile(f, (url)=>setNewCat({...newCat, image:url})); }}/>
+                        {newCat.image && <img src={newCat.image} className="w-16 h-16 rounded-lg object-cover border border-gold-700/40" alt=""/>}
+                        <input value={newCat.image && newCat.image.startsWith("http") ? newCat.image : ""} onChange={e=>setNewCat({...newCat,image:e.target.value})} placeholder="أو رابط صورة" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
+                      </div>
                       <button onClick={async()=>{
                         if(!newCat.title) return;
                         await sbPost("categories",{title:newCat.title,image:newCat.image||""});
@@ -469,7 +524,7 @@
 
                     {/* Floating social menu - luxury */}
           {(settings.whatsapp||settings.facebook||settings.instagram) && (
-            <div className="fixed bottom-6 left-4 z-40 flex flex-col items-start gap-3">
+            <div className="fixed bottom-6 left-2 z-40 flex flex-col items-start gap-3">
               <div className={`flex flex-col gap-2.5 transition-all duration-300 origin-bottom ${fabOpen ? "opacity-100 translate-y-0 scale-100 pointer-events-auto" : "opacity-0 translate-y-3 scale-95 pointer-events-none"}`}>
                 {settings.whatsapp && (
                   <a href={`https://wa.me/${String(settings.whatsapp).replace(/[^0-9+]/g,"")}`} target="_blank" rel="noopener"
