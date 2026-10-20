@@ -20,8 +20,75 @@
     .gold-text{background:linear-gradient(90deg,#dbbc72,#c08a33);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
     .cat-card:hover{transform:translateY(-8px);box-shadow:0 20px 40px -10px rgba(192,138,51,.3)}
     .cat-card:hover img{transform:scale(1.08)}
-    .cat-card,.product-card{transition:all .35s cubic-bezier(.22,1,.36,1)}
-    .product-card:hover{transform:translateY(-6px)}
+    .cat-card,.product-card{
+      transition: transform .4s cubic-bezier(.22,1,.36,1), box-shadow .4s ease, border-color .3s ease;
+      transform-style: preserve-3d;
+      perspective: 800px;
+      will-change: transform;
+    }
+    .cat-card:hover, .cat-card:active{
+      transform: translateY(-10px) rotateX(4deg) scale(1.02);
+      box-shadow: 0 25px 50px -12px rgba(192,138,51,.35), 0 0 0 1px rgba(192,138,51,.15);
+      border-color: rgba(192,138,51,.35) !important;
+    }
+    .cat-card:hover img, .cat-card:active img{transform:scale(1.1)}
+    .product-card:hover, .product-card:active{
+      transform: translateY(-8px) rotateX(3deg) scale(1.015);
+      box-shadow: 0 20px 40px -10px rgba(192,138,51,.3), 0 0 0 1px rgba(192,138,51,.12);
+    }
+    .product-card:active, .cat-card:active{transform: translateY(-4px) scale(0.98)}
+    .logo-3d{
+      transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s ease;
+    }
+    .logo-3d:active{
+      transform: scale(0.92) rotate(-6deg);
+    }
+    .btn-3d{
+      transition: transform .2s ease, box-shadow .2s ease;
+      box-shadow: 0 6px 0 rgba(0,0,0,.25), 0 10px 20px rgba(192,138,51,.2);
+    }
+    .btn-3d:active{
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 rgba(0,0,0,.25), 0 4px 10px rgba(192,138,51,.15);
+    }
+    .pressable{
+      transition: transform .15s ease, opacity .15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pressable:active{transform: scale(0.94); opacity: 0.9}
+    body{
+      background: radial-gradient(ellipse at 50% 0%, #1a1510 0%, #0f0d0b 55%, #0a0908 100%);
+    }
+    .glass{
+      background: linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(192,138,51,0.12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 30px rgba(0,0,0,.35);
+    }
+    .card-3d{
+      background: linear-gradient(160deg, rgba(40,34,28,0.9), rgba(20,17,14,0.95));
+      border: 1px solid rgba(192,138,51,0.18);
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.06) inset,
+        0 20px 40px -15px rgba(0,0,0,.6),
+        0 0 40px -20px rgba(192,138,51,.15);
+    }
+    header{
+      background: linear-gradient(180deg, rgba(15,13,11,0.95), rgba(15,13,11,0.85)) !important;
+      border-bottom: 1px solid rgba(192,138,51,0.15) !important;
+      box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    }
+    @keyframes shimmer {
+      0%{background-position: -200% 0}
+      100%{background-position: 200% 0}
+    }
+    .gold-shimmer{
+      background: linear-gradient(90deg, #a66d28, #dbbc72, #c08a33, #dbbc72, #a66d28);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 4s linear infinite;
+    }
     /* زر التواصل العائم — أسفل اليسار فقط، بدون حجب الشاشة */
     .fab-social{
       position: fixed !important;
@@ -123,12 +190,12 @@
 
     async function handleImageFile(file, onDone) {
       if (!file) return;
-      if (file.size > 8 * 1024 * 1024) { alert("الصورة كبيرة جداً (الحد 8 ميجا)"); return; }
+      if (file.size > 8 * 1024 * 1024) { showToast("الصورة كبيرة جداً (الحد 8 ميجا)", "err"); return; }
       try {
         const compressed = await compressImage(file, 1200, 0.82);
         if (compressed) onDone(compressed);
       } catch (e) {
-        alert("خطأ في ضغط الصورة: " + e.message);
+        showToast("خطأ في ضغط الصورة", "err");
       }
     }
     const formatPrice = (n, cur) => cur === "TRY" ? `₺${Number(n).toLocaleString("tr-TR")}` : `${Number(n).toLocaleString("ar-SY")} ل.س`;
@@ -172,6 +239,8 @@
       const [branchForm, setBranchForm] = useState({ name:"", address:"", phone:"" });
       const [saving, setSaving] = useState(false);
       const [fabOpen, setFabOpen] = useState(false);
+      const [logoTaps, setLogoTaps] = useState({count:0, last:0});
+      const [branchesOpen, setBranchesOpen] = useState(false);
       const [editingProduct, setEditingProduct] = useState(null);
       const [editingCat, setEditingCat] = useState(null);
       const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -199,11 +268,11 @@
       useEffect(() => { localStorage.setItem("luxe_cart", JSON.stringify(cart)); }, [cart]);
       useEffect(() => { localStorage.setItem("luxe_currency", currency); }, [currency]);
 
-      const showToast = (m) => { setToast(m); setTimeout(()=>setToast(null), 2000); };
+      const showToast = (m, type="ok") => { setToast({msg:m, type}); setTimeout(()=>setToast(null), 2500); };
       const checkoutWhatsApp = () => {
         if (cart.length === 0) return;
         const phone = String(settings.whatsapp || "").replace(/[^0-9+]/g, "");
-        if (!phone) { alert("أضف رقم واتساب من لوحة التحكم أولاً"); return; }
+        if (!phone) { showToast("أضف رقم واتساب من لوحة التحكم أولاً", "err"); return; }
         const storeName = settings.site_name || "LUXE BAGS";
         let msg = `مرحباً، أود طلب التالي من ${storeName}:%0A%0A`;
         cart.forEach((item, i) => {
@@ -256,11 +325,22 @@
         <div className="min-h-screen bg-[#0f0d0b] pb-20">
           <header className="sticky top-0 z-30 border-b border-gold-900/40 bg-[#0f0d0b]/90 backdrop-blur-xl">
             <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {settings.logo ? <img src={settings.logo} className="w-10 h-10 rounded-full object-cover border border-gold-600/40"/> :
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold-400 to-gold-700 flex items-center justify-center"><Icon d={I.bag} className="w-5 h-5 text-charcoal"/></div>}
+              <div className="flex items-center gap-3 select-none" onClick={()=>{
+                  const now = Date.now();
+                  setLogoTaps(prev => {
+                    const count = (now - prev.last < 800) ? prev.count + 1 : 1;
+                    if (count >= 5) {
+                      setAdminOpen(true); setSForm({...settings}); setAdminPass("");
+                      showToast("لوحة التحكم");
+                      return {count:0, last:0};
+                    }
+                    return {count, last: now};
+                  });
+                }} style={{cursor:"default"}}>
+                {settings.logo ? <img src={settings.logo} className="w-11 h-11 rounded-full object-cover border border-gold-500/50 shadow-lg shadow-gold-500/20 logo-3d"/> :
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-gold-300 via-gold-500 to-gold-700 flex items-center justify-center shadow-lg shadow-gold-500/30 logo-3d"><Icon d={I.bag} className="w-5 h-5 text-charcoal"/></div>}
                 <div>
-                  <h1 className="text-base sm:text-lg font-bold font-playfair gold-text">{settings.site_name||"LUXE BAGS"}</h1>
+                  <h1 className="text-base sm:text-lg font-bold font-playfair gold-shimmer">{settings.site_name||"LUXE BAGS"}</h1>
                   {settings.tagline && <p className="text-[10px] text-gold-600 -mt-0.5">{settings.tagline}</p>}
                 </div>
               </div>
@@ -269,7 +349,7 @@
                   <button onClick={()=>setCurrency("TRY")} className={`px-2.5 py-1.5 rounded-full ${currency==="TRY"?"bg-gold-500 text-charcoal font-bold":"text-gold-500"}`}>₺</button>
                   <button onClick={()=>setCurrency("SYP")} className={`px-2.5 py-1.5 rounded-full ${currency==="SYP"?"bg-gold-500 text-charcoal font-bold":"text-gold-500"}`}>ل.س</button>
                 </div>
-                <button onClick={()=>{setAdminOpen(true);setAdminPass("");setSForm({...settings});}} className="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center text-gold-500"><Icon d={I.settings}/></button>
+                
                 <button onClick={()=>setCartOpen(true)} className="relative w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center text-gold-400">
                   <Icon d={I.cart}/>
                   {cartCount>0 && <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gold-500 text-charcoal text-[10px] font-bold flex items-center justify-center">{cartCount}</span>}
@@ -278,19 +358,15 @@
             </div>
           </header>
 
-          <main className="max-w-6xl mx-auto px-4 py-8">
+          <main className="max-w-6xl mx-auto px-4 py-5">
             {!activeCategory ? (
               <>
-                <div className="text-center mb-10">
-                  <p className="text-gold-500 text-sm tracking-widest mb-2">مجموعة 2026</p>
-                  <h2 className="text-2xl sm:text-3xl font-bold font-playfair text-gold-100 mb-3">اكتشفي أناقتك</h2>
-                  {settings.header_desc && <p className="text-gold-600 text-sm max-w-md mx-auto">{settings.header_desc}</p>}
-                </div>
+                <div className="mb-6"></div>
                 <div className="grid grid-cols-2 gap-3 sm:gap-5">
                   {categories.map(cat => (
-                    <div key={cat.id} onClick={()=>setActiveCategory(cat)} className="cat-card relative rounded-2xl overflow-hidden cursor-pointer glass border border-gold-800/30">
+                    <div key={cat.id} onClick={()=>setActiveCategory(cat)} className="cat-card card-3d relative rounded-2xl overflow-hidden cursor-pointer pressable">
                       <div className="relative h-44 sm:h-52 overflow-hidden">
-                        <img src={cat.image||"https://placehold.co/400x300/1a1714/c08a33?text=قسم"} className="w-full h-full object-cover transition-transform duration-500" loading="lazy" decoding="async" onError={e=>e.target.src="https://placehold.co/400x300/1a1714/c08a33?text=Image"}/>
+                        <img src={cat.image||"https://placehold.co/400x300/1a1714/c08a33?text=قسم"} className="w-full h-full object-cover transition-transform duration-700 ease-out" loading="lazy" decoding="async" onError={e=>e.target.src="https://placehold.co/400x300/1a1714/c08a33?text=Image"}/>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"/>
                         <div className="absolute bottom-0 right-0 left-0 p-3">
                           <h3 className="text-sm font-bold text-gold-100">{cat.title}</h3>
@@ -330,7 +406,7 @@
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {(activeCategory.products||[]).map(p=>(
-                    <div key={p.id} className="product-card rounded-2xl overflow-hidden glass border border-gold-800/20 cursor-pointer" onClick={()=>setSelectedProduct(p)}>
+                    <div key={p.id} className="product-card card-3d rounded-2xl overflow-hidden cursor-pointer pressable" onClick={()=>setSelectedProduct(p)}>
                       <div className="relative h-52 overflow-hidden">
                         <img src={p.image} className="w-full h-full object-cover" loading="lazy" decoding="async"/>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"/>
@@ -402,7 +478,7 @@
                   {cart.length>0 && (
                     <div className="p-5 border-t border-gold-800/30 space-y-3">
                       <div className="flex justify-between"><span className="text-gold-400 text-sm">الإجمالي</span><span className="font-bold gold-text">{formatPrice(currency==="TRY"?totalTRY:totalSYP,currency)}</span></div>
-                      <button onClick={checkoutWhatsApp} className="w-full py-3.5 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm shadow-lg shadow-gold-500/20 active:scale-[0.98] transition">إتمام الطلب عبر واتساب</button>
+                      <button onClick={checkoutWhatsApp} className="w-full py-3.5 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm btn-3d pressable">إتمام الطلب عبر واتساب</button>
                       <button onClick={()=>setCart([])} className="w-full py-2 text-xs text-gold-600">تفريغ</button>
                     </div>
                   )}
@@ -426,11 +502,11 @@
                 {settings.whatsapp && (
                   <a href={`https://wa.me/${String(settings.whatsapp).replace(/[^0-9+]/g,"")}?text=${encodeURIComponent("مرحباً، مهتمة بـ "+selectedProduct.name+" من "+(settings.site_name||"LUXE BAGS"))}`}
                     target="_blank" rel="noopener"
-                    className="flex-1 py-3.5 rounded-xl bg-green-600 text-white font-bold text-sm flex items-center justify-center gap-2">
+                    className="flex-1 py-3.5 rounded-xl bg-green-600 text-white font-bold text-sm flex items-center justify-center gap-2 btn-3d pressable">
                     <Icon d={I.wa} className="w-5 h-5"/> واتساب
                   </a>
                 )}
-                <button type="button" onClick={(e)=>{e.preventDefault();e.stopPropagation();const p=selectedProduct;if(p){addToCart(p);setSelectedProduct(null);setTimeout(()=>setCartOpen(true),50);}}} className="flex-1 py-3.5 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm flex items-center justify-center gap-2">
+                <button type="button" onClick={(e)=>{e.preventDefault();e.stopPropagation();const p=selectedProduct;if(p){addToCart(p);setSelectedProduct(null);setTimeout(()=>setCartOpen(true),50);}}} className="flex-1 py-3.5 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm flex items-center justify-center gap-2 btn-3d pressable">
                   <Icon d={I.cart}/> السلة
                 </button>
               </div>
@@ -447,9 +523,9 @@
                   <Icon d={I.lock} className="w-10 h-10 text-gold-500 mx-auto mb-2"/>
                   <h2 className="text-lg font-bold text-gold-100">لوحة التحكم</h2>
                 </div>
-                <input type="password" value={adminPass} onChange={e=>setAdminPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(adminPass===(settings.admin_password||"admin123")?(setUnlocked(true),sessionStorage.setItem("luxe_admin_ok","1")):alert("كلمة السر خطأ"))}
+                <input type="password" value={adminPass} onChange={e=>setAdminPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(adminPass===(settings.admin_password||"admin123")?(setUnlocked(true),sessionStorage.setItem("luxe_admin_ok","1")):showToast("كلمة السر خطأ", "err"))}
                   className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none text-center" placeholder="كلمة السر"/>
-                <button onClick={()=>adminPass===(settings.admin_password||"admin123")?(setUnlocked(true),sessionStorage.setItem("luxe_admin_ok","1")):alert("كلمة السر خطأ")} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm">دخول</button>
+                <button onClick={()=>adminPass===(settings.admin_password||"admin123")?(setUnlocked(true),sessionStorage.setItem("luxe_admin_ok","1")):showToast("كلمة السر خطأ", "err")} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm">دخول</button>
                 <button onClick={()=>setAdminOpen(false)} className="w-full py-2 text-xs text-gold-600">إلغاء</button>
               </div>
             </div>
@@ -489,8 +565,8 @@
                         try {
                           await fetch(`${SB_URL}/rest/v1/settings?id=eq.1`,{method:"PATCH",headers,body:JSON.stringify({...sForm,updated_at:new Date().toISOString()})});
                           setSettings({...settings,...sForm});
-                          alert("تم الحفظ ✓");
-                        } catch(e){alert(e.message)}
+                          showToast("تم الحفظ ✓");
+                        } catch(e){showToast(String(e.message||e), "err")}
                         setSaving(false);
                       }} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm">حفظ أونلاين</button>
                     </>
@@ -514,14 +590,14 @@
                         <input type="number" value={form.price_syp} onChange={e=>setForm({...form,price_syp:e.target.value})} placeholder="سعر ل.س" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
                       </div>
                       <button disabled={saving} onClick={async()=>{
-                        if(!form.name||!form.category_id) return alert("املئي الحقول");
+                        if(!form.name||!form.category_id) return showToast("املئي الحقول المطلوبة", "err");
                         setSaving(true);
                         try {
                           await sbPost("products",{category_id:form.category_id,name:form.name,image:form.image||"",price_try:+form.price_try||0,price_syp:+form.price_syp||0,description:form.description||""});
                           await loadData();
                           setForm({category_id:form.category_id,name:"",image:"",price_try:"",price_syp:"",description:""});
-                          alert("تمت الإضافة ✓");
-                        } catch(e){alert(e.message)}
+                          showToast("تمت الإضافة ✓");
+                        } catch(e){showToast(String(e.message||e), "err")}
                         setSaving(false);
                       }} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm">إضافة منتج</button>
                       <p className="text-xs text-gold-500 font-medium pt-3">المنتجات الحالية — عدّلي بحرية</p>
@@ -543,7 +619,7 @@
                                     price_try: +document.getElementById(`p-try-${p.id}`).value||0,
                                     price_syp: +document.getElementById(`p-syp-${p.id}`).value||0,
                                   })});
-                                  setEditingProduct(null); await loadData(); alert("تم حفظ المنتج ✓");
+                                  setEditingProduct(null); await loadData(); showToast("تم حفظ المنتج ✓");
                                 }} className="flex-1 py-2 rounded-lg bg-gold-500 text-charcoal text-xs font-bold">حفظ</button>
                                 <button onClick={()=>setEditingProduct(null)} className="px-3 py-2 rounded-lg bg-white/5 text-gold-500 text-xs">إلغاء</button>
                               </div>
@@ -578,7 +654,7 @@
                         await sbPost("categories",{title:newCat.title,image:newCat.image||""});
                         setNewCat({title:"",image:""});
                         await loadData();
-                        alert("تمت الإضافة ✓");
+                        showToast("تمت الإضافة ✓");
                       }} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm">إضافة قسم</button>
                       {categories.map(c=>(
                         <div key={c.id} className="p-3 rounded-xl bg-white/5 border border-gold-800/20 space-y-2">
@@ -591,7 +667,7 @@
                                 <button onClick={async()=>{
                                   const t=document.getElementById(`cat-title-${c.id}`).value;
                                   await fetch(`${SB_URL}/rest/v1/categories?id=eq.${c.id}`,{method:"PATCH",headers,body:JSON.stringify({title:t})});
-                                  setEditingCat(null); await loadData(); alert("تم حفظ القسم ✓");
+                                  setEditingCat(null); await loadData(); showToast("تم حفظ القسم ✓");
                                 }} className="flex-1 py-2 rounded-lg bg-gold-500 text-charcoal text-xs font-bold">حفظ</button>
                                 <button onClick={()=>setEditingCat(null)} className="px-3 py-2 rounded-lg bg-white/5 text-gold-500 text-xs">إلغاء</button>
                               </div>
@@ -638,7 +714,7 @@
                       <button onClick={async()=>{
                         await fetch(`${SB_URL}/rest/v1/settings?id=eq.1`,{method:"PATCH",headers,body:JSON.stringify({whatsapp:sForm.whatsapp,facebook:sForm.facebook,instagram:sForm.instagram})});
                         setSettings({...settings,...sForm});
-                        alert("تم ✓");
+                        showToast("تم الحفظ ✓");
                       }} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm">حفظ</button>
                     </>
                   )}
@@ -647,44 +723,95 @@
             </div>
           )}
 
-                    {/* Floating social menu - luxury */}
-          {(settings.whatsapp||settings.facebook||settings.instagram) && (
-            <div className="fab-social flex flex-col items-start gap-3">
-              <div className={`fab-menu flex-col gap-2.5 transition-all duration-300 origin-bottom ${fabOpen ? "is-open opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-3 scale-95"}`}>
-                {settings.whatsapp && (
-                  <a href={`https://wa.me/${String(settings.whatsapp).replace(/[^0-9+]/g,"")}`} target="_blank" rel="noopener"
-                    className="group flex items-center gap-3 bg-[#0d0b09]/95 border border-green-500/30 backdrop-blur-xl pl-2 pr-4 py-2 rounded-full shadow-xl shadow-black/40 hover:border-green-400/60 hover:scale-105 transition-all">
-                    <span className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30">
-                      <Icon d={I.wa} className="w-5 h-5 text-white"/>
-                    </span>
-                    <span className="text-sm font-medium text-gold-100">واتساب</span>
-                  </a>
-                )}
-                {settings.facebook && (
-                  <a href={settings.facebook.startsWith("http") ? settings.facebook : `https://facebook.com/${settings.facebook}`} target="_blank" rel="noopener"
-                    className="group flex items-center gap-3 bg-[#0d0b09]/95 border border-blue-500/30 backdrop-blur-xl pl-2 pr-4 py-2 rounded-full shadow-xl shadow-black/40 hover:border-blue-400/60 hover:scale-105 transition-all">
-                    <span className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                      <Icon d={I.share} className="w-5 h-5 text-white"/>
-                    </span>
-                    <span className="text-sm font-medium text-gold-100">فيسبوك</span>
-                  </a>
-                )}
-                {settings.instagram && (
-                  <a href={settings.instagram.startsWith("http") ? settings.instagram : `https://instagram.com/${settings.instagram}`} target="_blank" rel="noopener"
-                    className="group flex items-center gap-3 bg-[#0d0b09]/95 border border-pink-500/30 backdrop-blur-xl pl-2 pr-4 py-2 rounded-full shadow-xl shadow-black/40 hover:border-pink-400/60 hover:scale-105 transition-all">
-                    <span className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center shadow-lg shadow-pink-500/30">
-                      <Icon d={I.share} className="w-5 h-5 text-white"/>
-                    </span>
-                    <span className="text-sm font-medium text-gold-100">إنستغرام</span>
-                  </a>
-                )}
-              </div>
-              <button onClick={() => setFabOpen(!fabOpen)}
-                className={`relative w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-charcoal transition-all duration-300 ${fabOpen ? "bg-gold-200 rotate-45 scale-95" : "bg-gradient-to-br from-gold-300 via-gold-500 to-gold-700 hover:scale-110"}`}
-                style={{boxShadow: fabOpen ? "0 8px 32px rgba(0,0,0,0.4)" : "0 8px 32px rgba(192,138,51,0.45)"}}>
-                <Icon d={fabOpen ? I.x : I.share} className="w-6 h-6"/>
-                {!fabOpen && <span className="absolute inset-0 rounded-full bg-gold-400/40 animate-ping opacity-40" style={{animationDuration:"2.5s"}}/>}
+                    {/* Floating buttons: branches above contact */}
+          <div className="fab-social flex flex-col items-start gap-3">
+            {/* زر الفروع — فوق زر التواصل */}
+            {branches.length > 0 && (
+              <button type="button" onClick={() => { setBranchesOpen(true); setFabOpen(false); }}
+                className="w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-charcoal bg-gradient-to-br from-gold-200 via-gold-400 to-gold-600 hover:scale-110 transition-all"
+                style={{pointerEvents:"auto", boxShadow:"0 8px 28px rgba(192,138,51,0.35)"}}
+                title="فروعنا">
+                <Icon d={I.location} className="w-6 h-6"/>
               </button>
+            )}
+            {(settings.whatsapp||settings.facebook||settings.instagram) && (
+              <>
+                <div className={`fab-menu flex-col gap-2.5 transition-all duration-300 origin-bottom ${fabOpen ? "is-open opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-3 scale-95"}`}>
+                  {settings.whatsapp && (
+                    <a href={`https://wa.me/${String(settings.whatsapp).replace(/[^0-9+]/g,"")}`} target="_blank" rel="noopener"
+                      className="group flex items-center gap-3 bg-[#0d0b09]/95 border border-green-500/30 backdrop-blur-xl pl-2 pr-4 py-2 rounded-full shadow-xl shadow-black/40 hover:border-green-400/60 hover:scale-105 transition-all">
+                      <span className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30">
+                        <Icon d={I.wa} className="w-5 h-5 text-white"/>
+                      </span>
+                      <span className="text-sm font-medium text-gold-100">واتساب</span>
+                    </a>
+                  )}
+                  {settings.facebook && (
+                    <a href={settings.facebook.startsWith("http") ? settings.facebook : `https://facebook.com/${settings.facebook}`} target="_blank" rel="noopener"
+                      className="group flex items-center gap-3 bg-[#0d0b09]/95 border border-blue-500/30 backdrop-blur-xl pl-2 pr-4 py-2 rounded-full shadow-xl shadow-black/40 hover:border-blue-400/60 hover:scale-105 transition-all">
+                      <span className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                        <Icon d={I.share} className="w-5 h-5 text-white"/>
+                      </span>
+                      <span className="text-sm font-medium text-gold-100">فيسبوك</span>
+                    </a>
+                  )}
+                  {settings.instagram && (
+                    <a href={settings.instagram.startsWith("http") ? settings.instagram : `https://instagram.com/${settings.instagram}`} target="_blank" rel="noopener"
+                      className="group flex items-center gap-3 bg-[#0d0b09]/95 border border-pink-500/30 backdrop-blur-xl pl-2 pr-4 py-2 rounded-full shadow-xl shadow-black/40 hover:border-pink-400/60 hover:scale-105 transition-all">
+                      <span className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center shadow-lg shadow-pink-500/30">
+                        <Icon d={I.share} className="w-5 h-5 text-white"/>
+                      </span>
+                      <span className="text-sm font-medium text-gold-100">إنستغرام</span>
+                    </a>
+                  )}
+                </div>
+                <button type="button" onClick={() => setFabOpen(!fabOpen)}
+                  className={`relative w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-charcoal transition-all duration-300 ${fabOpen ? "bg-gold-200 rotate-45 scale-95" : "bg-gradient-to-br from-gold-300 via-gold-500 to-gold-700 hover:scale-110"}`}
+                  style={{pointerEvents:"auto", boxShadow: fabOpen ? "0 8px 32px rgba(0,0,0,0.4)" : "0 8px 32px rgba(192,138,51,0.45)"}}>
+                  <Icon d={fabOpen ? I.x : I.share} className="w-6 h-6"/>
+                  {!fabOpen && <span className="absolute inset-0 rounded-full bg-gold-400/40 animate-ping opacity-40" style={{animationDuration:"2.5s"}}/>}
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* نافذة الفروع الفخمة */}
+          {branchesOpen && (
+            <div className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={()=>setBranchesOpen(false)}>
+              <div className="w-full max-w-md rounded-3xl border border-gold-700/40 bg-[#14110e] shadow-2xl overflow-hidden" onClick={e=>e.stopPropagation()}>
+                <div className="flex items-center justify-between p-5 border-b border-gold-800/40 bg-gradient-to-l from-[#1a1714] to-[#1f1a14]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-400 to-gold-700 flex items-center justify-center">
+                      <Icon d={I.location} className="w-5 h-5 text-charcoal"/>
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-gold-100">فروعنا</h3>
+                      <p className="text-[10px] text-gold-600">{branches.length} فرع</p>
+                    </div>
+                  </div>
+                  <button type="button" onClick={()=>setBranchesOpen(false)} className="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center text-gold-400">
+                    <Icon d={I.x}/>
+                  </button>
+                </div>
+                <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
+                  {branches.map(b=>(
+                    <div key={b.id} className="p-4 rounded-2xl bg-white/[0.04] border border-gold-800/30 flex gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gold-500/15 flex items-center justify-center shrink-0">
+                        <Icon d={I.location} className="w-5 h-5 text-gold-400"/>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-gold-100">{b.name}</p>
+                        {b.address && <p className="text-xs text-gold-500 mt-0.5">{b.address}</p>}
+                        {b.phone && (
+                          <a href={`tel:${b.phone}`} className="inline-flex items-center gap-1 text-xs text-gold-400 mt-2 hover:text-gold-300">
+                            <Icon d={I.phone} className="w-3.5 h-3.5"/> {b.phone}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -708,14 +835,19 @@
                       setDeleteConfirm(null);
                       await loadData();
                       showToast("تم الحذف ✓");
-                    } catch(e){ alert(e.message); }
+                    } catch(e){ showToast(String(e.message||e), "err"); }
                   }} className="flex-1 py-3 rounded-xl bg-red-600 text-white text-sm font-bold">حذف</button>
                 </div>
               </div>
             </div>
           )}
 
-          {toast && <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-full bg-gold-500 text-charcoal text-sm font-medium">{toast}</div>}
+          {toast && (
+            <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[10001] px-5 py-3 rounded-2xl shadow-2xl text-sm font-medium border backdrop-blur-xl"
+              style={{background: toast.type==="err" ? "rgba(127,29,29,0.95)" : "linear-gradient(135deg,#c08a33,#dbbc72)", color: toast.type==="err" ? "#fecaca" : "#1a1714", borderColor: toast.type==="err" ? "rgba(248,113,113,0.3)" : "rgba(192,138,51,0.4)"}}>
+              {toast.msg || toast}
+            </div>
+          )}
         </div>
       );
     }
