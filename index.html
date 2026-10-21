@@ -4,8 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>LUXE BAGS</title>
+  <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://btvgbkzpwgbqrbwbbufc.supabase.co" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
+  <link rel="dns-prefetch" href="https://unpkg.com">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <script>
     tailwind.config = { theme: { extend: { colors: {
       gold: {50:'#fbf8f1',100:'#f5edd8',200:'#e9d7a8',300:'#dbbc72',400:'#cfa14a',500:'#c08a33',600:'#a66d28',700:'#855223',800:'#6e4323',900:'#5c3921'},
@@ -89,6 +96,12 @@
       -webkit-text-fill-color: transparent;
       animation: shimmer 4s linear infinite;
     }
+
+
+    /* تسريع العرض */
+    img{content-visibility:auto}
+    .cat-card,.product-card{content-visibility:auto;contain-intrinsic-size:auto 220px}
+    .glass{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 
     /* حقيبة التحميل الفاخرة */
     .bag-loader{position:relative;width:88px;height:100px;margin:0 auto 16px}
@@ -215,7 +228,10 @@
       "Prefer": "return=representation"
     };
     async function sbGet(table, query="") {
-      const r = await fetch(`${SB_URL}/rest/v1/${table}?${query}`, { headers });
+      const r = await fetch(`${SB_URL}/rest/v1/${table}?${query}`, {
+        headers,
+        cache: "default"
+      });
       if (!r.ok) throw new Error(await r.text());
       return r.json();
     }
@@ -364,21 +380,54 @@
       const [editingCat, setEditingCat] = useState(null);
       const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-      const loadData = async () => {
-        setLoading(true); setError("");
+      const CACHE_KEY = "luxe_data_v1";
+      const CACHE_TTL = 1000 * 60 * 10; // 10 دقائق
+
+      const applyData = (s, cats, prods, brs) => {
+        if (s && s[0]) setSettings(prev => ({ ...prev, ...s[0] }));
+        setCategories((cats||[]).map(cat => ({ ...cat, products: (prods||[]).filter(x => String(x.category_id) === String(cat.id)) })));
+        setBranches(brs||[]);
+      };
+
+      const loadData = async (opts = {}) => {
+        const silent = !!opts.silent;
+        setError("");
+        // 1) كاش فوري → الموقع يفتح مباشرة
+        let hadCache = false;
+        if (!silent) {
+          try {
+            const raw = localStorage.getItem(CACHE_KEY);
+            if (raw) {
+              const cached = JSON.parse(raw);
+              if (cached && cached.ts) {
+                applyData(cached.s, cached.c, cached.p, cached.b);
+                setLoading(false);
+                hadCache = true;
+              }
+            }
+          } catch (_) {}
+        }
+        if (!silent && !hadCache) setLoading(true);
         try {
-          const [s, c, p, b] = await Promise.all([
+          const [s, cats, p, b] = await Promise.all([
             sbGet("settings", "id=eq.1"),
             sbGet("categories", "order=sort_order.asc"),
             sbGet("products", "order=sort_order.asc"),
             sbGet("branches", "order=created_at.asc")
           ]);
-          if (s[0]) setSettings(prev => ({ ...prev, ...s[0] }));
-          setCategories((c||[]).map(cat => ({ ...cat, products: (p||[]).filter(x => x.category_id === cat.id) })));
-          setBranches(b||[]);
+          applyData(s, cats, p, b);
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), s, c: cats, p, b }));
+          } catch (_) {}
         } catch(e) {
           console.error(e);
-          setError(String(e.message||e));
+          // إذا في كاش ما نظهر خطأ كامل
+          try {
+            const raw = localStorage.getItem(CACHE_KEY);
+            if (!raw) setError(String(e.message||e));
+          } catch(_) {
+            setError(String(e.message||e));
+          }
         }
         setLoading(false);
       };
@@ -620,7 +669,7 @@
                   {categories.map(cat => (
                     <div key={cat.id} onClick={()=>setActiveCategory(cat)} className="cat-card card-3d relative rounded-2xl overflow-hidden cursor-pointer pressable">
                       <div className="relative h-44 sm:h-52 overflow-hidden">
-                        <img src={cat.image||"https://placehold.co/400x300/1a1714/c08a33?text=قسم"} className="w-full h-full object-cover transition-transform duration-700 ease-out" loading="lazy" decoding="async" onError={e=>e.target.src="https://placehold.co/400x300/1a1714/c08a33?text=Image"}/>
+                        <img src={cat.image||"https://placehold.co/400x300/1a1714/c08a33?text=قسم"} className="w-full h-full object-cover transition-transform duration-500 ease-out" loading="lazy" decoding="async" onError={e=>e.target.src="https://placehold.co/400x300/1a1714/c08a33?text=Image"}/>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"/>
                         <div className="absolute bottom-0 right-0 left-0 p-3">
                           <h3 className="text-sm font-bold text-gold-100">{cat.title}</h3>
