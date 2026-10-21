@@ -755,34 +755,7 @@
           </main>
 
           {settings.footer_desc && (
-            <footer
-              className="border-t border-gold-900/40 mt-10 py-8 text-center px-4"
-              onClick={()=>{
-                const now = Date.now();
-                setFooterTaps(prev => {
-                  const count = (now - prev.last < 700) ? prev.count + 1 : 1;
-                  if (count >= 7) {
-                    setOwnerOpen(true);
-                    setOwnerPass("");
-                    setOwnerForm({
-                      owner_password: settings.owner_password || "owner2026",
-                      credits_enabled: settings.credits_enabled !== false && settings.credits_enabled !== "false",
-                      credits_position: settings.credits_position || "footer",
-                      credits_title: settings.credits_title || "تصميم وتطوير",
-                      credits_name: settings.credits_name || "",
-                      credits_text: settings.credits_text || "",
-                      credits_whatsapp: settings.credits_whatsapp || "",
-                      credits_instagram: settings.credits_instagram || "",
-                      credits_facebook: settings.credits_facebook || "",
-                      credits_tiktok: settings.credits_tiktok || "",
-                    });
-                    showToast("لوحة الحقوق");
-                    return {count:0,last:0};
-                  }
-                  return {count, last: now};
-                });
-              }}
-            >
+            <footer className="border-t border-gold-900/40 mt-10 py-8 text-center px-4">
               {settings.footer_desc && <p className="text-gold-500 text-sm mb-4">{settings.footer_desc}</p>}
               {(settings.credits_enabled !== false && settings.credits_enabled !== "false") && (settings.credits_position==="footer" || settings.credits_position==="both" || !settings.credits_position) && (settings.credits_name || settings.credits_text) && (
                 <div className="mt-2 pt-4 border-t border-gold-900/30 max-w-sm mx-auto">
@@ -929,9 +902,25 @@
                   <button onClick={()=>setAdminOpen(false)}><Icon d={I.x}/></button>
                 </div>
                 <div className="flex overflow-x-auto border-b border-gold-800/30">
-                  {["settings","products","categories","branches","social"].map(t=>(
-                    <button key={t} onClick={()=>{setTab(t);setOpenDd("");}} className={`px-3 py-2.5 text-xs whitespace-nowrap ${tab===t?"text-gold-300 border-b-2 border-gold-500":"text-gold-600"}`}>
-                      {{settings:"الإعدادات",products:"منتجات",categories:"أقسام",branches:"فروع",social:"تواصل"}[t]}
+                  {["settings","products","categories","branches","social","credits"].map(t=>(
+                    <button key={t} onClick={()=>{
+                      setTab(t); setOpenDd("");
+                      if (t==="credits") {
+                        setOwnerForm({
+                          owner_password: settings.owner_password || "owner2026",
+                          credits_enabled: settings.credits_enabled !== false && settings.credits_enabled !== "false",
+                          credits_position: settings.credits_position || "footer",
+                          credits_title: settings.credits_title || "تصميم وتطوير",
+                          credits_name: settings.credits_name || "",
+                          credits_text: settings.credits_text || "",
+                          credits_whatsapp: settings.credits_whatsapp || "",
+                          credits_instagram: settings.credits_instagram || "",
+                          credits_facebook: settings.credits_facebook || "",
+                          credits_tiktok: settings.credits_tiktok || "",
+                        });
+                      }
+                    }} className={`px-3 py-2.5 text-xs whitespace-nowrap ${tab===t?"text-gold-300 border-b-2 border-gold-500":"text-gold-600"}`}>
+                      {{settings:"الإعدادات",products:"منتجات",categories:"أقسام",branches:"فروع",social:"تواصل",credits:"حقوقي"}[t]}
                     </button>
                   ))}
                 </div>
@@ -1192,6 +1181,97 @@
                         showToast("تم الحفظ ✓");
                       }} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm">حفظ</button>
                     </>
+                  )}
+
+                  {tab==="credits" && (
+                    <div className="space-y-3">
+                      <div className="p-3 rounded-xl bg-gold-500/10 border border-gold-700/30">
+                        <p className="text-xs text-gold-300 font-medium">هذا القسم محمي بكلمة سر خاصة</p>
+                        <p className="text-[10px] text-gold-600 mt-1">حتى لو شخص دخل لوحة التحكم، ما بيقدر يفتح حقوقك بدون كلمة السر المنفصلة</p>
+                      </div>
+
+                      {!ownerUnlocked ? (
+                        <div className="space-y-3 py-4">
+                          <p className="text-xs text-gold-500 text-center">أدخلي كلمة سر الحقوق للمتابعة</p>
+                          <input type="password" value={ownerPass} onChange={e=>setOwnerPass(e.target.value)}
+                            onKeyDown={e=>{ if(e.key==="Enter"){ if(ownerPass===(settings.owner_password||"owner2026")){ setOwnerUnlocked(true); sessionStorage.setItem("luxe_owner_ok","1"); showToast("تم فتح قسم الحقوق"); } else showToast("كلمة السر خطأ","err"); }}}
+                            className="w-full bg-white/5 border border-gold-700/40 rounded-xl px-4 py-3 text-sm text-gold-100 outline-none text-center tracking-widest"
+                            placeholder="كلمة سر الحقوق"/>
+                          <button type="button" onClick={()=>{
+                            if(ownerPass===(settings.owner_password||"owner2026")){ setOwnerUnlocked(true); sessionStorage.setItem("luxe_owner_ok","1"); showToast("تم فتح قسم الحقوق"); }
+                            else showToast("كلمة السر خطأ","err");
+                          }} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal text-sm font-bold">فتح القسم</button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <label className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-gold-800/30">
+                            <span className="text-xs text-gold-300">إظهار الحقوق على الموقع</span>
+                            <input type="checkbox" checked={!!ownerForm.credits_enabled} onChange={e=>setOwnerForm({...ownerForm,credits_enabled:e.target.checked})} className="accent-amber-500 w-5 h-5"/>
+                          </label>
+                          <div className="space-y-1">
+                            <p className="text-[11px] text-gold-600">مكان الظهور</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {[
+                                {id:"footer",label:"أسفل الموقع"},
+                                {id:"header",label:"أعلى الموقع"},
+                                {id:"both",label:"أعلى وأسفل"},
+                                {id:"none",label:"مخفي عن الزبائن"},
+                              ].map(p=>(
+                                <button key={p.id} type="button" onClick={()=>setOwnerForm({...ownerForm,credits_position:p.id})}
+                                  className={`py-2.5 rounded-xl text-xs border transition ${ownerForm.credits_position===p.id?"bg-gold-500/20 border-gold-500 text-gold-200":"bg-white/5 border-gold-800/30 text-gold-500"}`}>
+                                  {p.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <input value={ownerForm.credits_title||""} onChange={e=>setOwnerForm({...ownerForm,credits_title:e.target.value})}
+                            placeholder="عنوان (مثال: تصميم وتطوير)" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none"/>
+                          <input value={ownerForm.credits_name||""} onChange={e=>setOwnerForm({...ownerForm,credits_name:e.target.value})}
+                            placeholder="اسمك أو اسم الاستوديو" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none"/>
+                          <textarea value={ownerForm.credits_text||""} onChange={e=>setOwnerForm({...ownerForm,credits_text:e.target.value})} rows={2}
+                            placeholder="نص الحقوق / وصف قصير" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none resize-none"/>
+                          <p className="text-[11px] text-gold-600 pt-1">حساباتك</p>
+                          <input value={ownerForm.credits_whatsapp||""} onChange={e=>setOwnerForm({...ownerForm,credits_whatsapp:e.target.value})}
+                            placeholder="واتساب" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/>
+                          <input value={ownerForm.credits_instagram||""} onChange={e=>setOwnerForm({...ownerForm,credits_instagram:e.target.value})}
+                            placeholder="إنستغرام" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/>
+                          <input value={ownerForm.credits_facebook||""} onChange={e=>setOwnerForm({...ownerForm,credits_facebook:e.target.value})}
+                            placeholder="فيسبوك" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/>
+                          <input value={ownerForm.credits_tiktok||""} onChange={e=>setOwnerForm({...ownerForm,credits_tiktok:e.target.value})}
+                            placeholder="تيك توك" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/>
+                          <input type="password" value={ownerForm.owner_password||""} onChange={e=>setOwnerForm({...ownerForm,owner_password:e.target.value})}
+                            placeholder="تغيير كلمة سر الحقوق" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none"/>
+                          <button type="button" onClick={async()=>{
+                            try {
+                              const payload = {
+                                owner_password: ownerForm.owner_password || "owner2026",
+                                credits_enabled: ownerForm.credits_enabled !== false,
+                                credits_position: ownerForm.credits_position || "footer",
+                                credits_title: ownerForm.credits_title || "",
+                                credits_name: ownerForm.credits_name || "",
+                                credits_text: ownerForm.credits_text || "",
+                                credits_whatsapp: ownerForm.credits_whatsapp || "",
+                                credits_instagram: ownerForm.credits_instagram || "",
+                                credits_facebook: ownerForm.credits_facebook || "",
+                                credits_tiktok: ownerForm.credits_tiktok || "",
+                              };
+                              const r = await fetch(`${SB_URL}/rest/v1/settings?id=eq.1`, {
+                                method: "PATCH", headers: {...headers, "Content-Type":"application/json", "Prefer":"return=minimal"},
+                                body: JSON.stringify(payload)
+                              });
+                              if (!r.ok) throw new Error(await r.text() || "فشل الحفظ");
+                              setSettings(prev => ({...prev, ...payload}));
+                              try { localStorage.removeItem("luxe_data_v1"); } catch(_){}
+                              showToast("تم حفظ الحقوق ✓");
+                            } catch(e) {
+                              showToast(String(e.message||e).slice(0,120), "err");
+                            }
+                          }} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal text-sm font-bold btn-3d">حفظ أونلاين</button>
+                          <button type="button" onClick={()=>{ sessionStorage.removeItem("luxe_owner_ok"); setOwnerUnlocked(false); setOwnerPass(""); showToast("تم قفل قسم الحقوق"); }}
+                            className="w-full py-2 text-xs text-gold-600">قفل القسم</button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -1471,114 +1551,8 @@
           )}
 
 
-          {/* لوحة الحقوق المخفية */}
-          {ownerOpen && (
-            <div className="fixed inset-0 z-[10060] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-              <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl border border-gold-700/40 bg-[#14110e] shadow-2xl">
-                <div className="sticky top-0 flex items-center justify-between p-4 border-b border-gold-800/40 bg-[#14110e]/95 backdrop-blur z-10">
-                  <div>
-                    <h3 className="text-sm font-bold text-gold-100">لوحة الحقوق</h3>
-                    <p className="text-[10px] text-gold-600">خاصة بك — منفصلة عن لوحة التحكم</p>
-                  </div>
-                  <button type="button" onClick={()=>setOwnerOpen(false)} className="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center text-gold-400"><Icon d={I.x}/></button>
-                </div>
-
-                {!ownerUnlocked ? (
-                  <div className="p-6 space-y-4">
-                    <p className="text-xs text-gold-500 text-center">أدخلي كلمة سر الحقوق</p>
-                    <input type="password" value={ownerPass} onChange={e=>setOwnerPass(e.target.value)}
-                      onKeyDown={e=>{ if(e.key==="Enter"){ if(ownerPass===(settings.owner_password||"owner2026")){ setOwnerUnlocked(true); sessionStorage.setItem("luxe_owner_ok","1"); } else showToast("كلمة السر خطأ","err"); }}}
-                      className="w-full bg-white/5 border border-gold-700/40 rounded-xl px-4 py-3 text-sm text-gold-100 outline-none text-center tracking-widest"
-                      placeholder="••••••••"/>
-                    <button type="button" onClick={()=>{
-                      if(ownerPass===(settings.owner_password||"owner2026")){ setOwnerUnlocked(true); sessionStorage.setItem("luxe_owner_ok","1"); }
-                      else showToast("كلمة السر خطأ","err");
-                    }} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal text-sm font-bold">دخول</button>
-                  </div>
-                ) : (
-                  <div className="p-4 space-y-3">
-                    <label className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-gold-800/30">
-                      <span className="text-xs text-gold-300">إظهار الحقوق على الموقع</span>
-                      <input type="checkbox" checked={!!ownerForm.credits_enabled} onChange={e=>setOwnerForm({...ownerForm,credits_enabled:e.target.checked})} className="accent-amber-500 w-5 h-5"/>
-                    </label>
-
-                    <div className="space-y-1">
-                      <p className="text-[11px] text-gold-600">مكان الظهور</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {[
-                          {id:"footer",label:"أسفل الموقع"},
-                          {id:"header",label:"أعلى الموقع"},
-                          {id:"both",label:"أعلى وأسفل"},
-                          {id:"none",label:"مخفي عن الزبائن"},
-                        ].map(p=>(
-                          <button key={p.id} type="button" onClick={()=>setOwnerForm({...ownerForm,credits_position:p.id})}
-                            className={`py-2.5 rounded-xl text-xs border transition ${ownerForm.credits_position===p.id?"bg-gold-500/20 border-gold-500 text-gold-200":"bg-white/5 border-gold-800/30 text-gold-500"}`}>
-                            {p.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <input value={ownerForm.credits_title||""} onChange={e=>setOwnerForm({...ownerForm,credits_title:e.target.value})}
-                      placeholder="عنوان (مثال: تصميم وتطوير)" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none"/>
-                    <input value={ownerForm.credits_name||""} onChange={e=>setOwnerForm({...ownerForm,credits_name:e.target.value})}
-                      placeholder="اسمك أو اسم الاستوديو" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none"/>
-                    <textarea value={ownerForm.credits_text||""} onChange={e=>setOwnerForm({...ownerForm,credits_text:e.target.value})} rows={2}
-                      placeholder="نص الحقوق / وصف قصير" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none resize-none"/>
-
-                    <p className="text-[11px] text-gold-600 pt-1">حساباتك للتواصل (تظهر كأزرار)</p>
-                    <input value={ownerForm.credits_whatsapp||""} onChange={e=>setOwnerForm({...ownerForm,credits_whatsapp:e.target.value})}
-                      placeholder="واتساب (مع رمز الدولة)" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/>
-                    <input value={ownerForm.credits_instagram||""} onChange={e=>setOwnerForm({...ownerForm,credits_instagram:e.target.value})}
-                      placeholder="إنستغرام (يوزر أو رابط)" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/>
-                    <input value={ownerForm.credits_facebook||""} onChange={e=>setOwnerForm({...ownerForm,credits_facebook:e.target.value})}
-                      placeholder="فيسبوك (يوزر أو رابط)" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/>
-                    <input value={ownerForm.credits_tiktok||""} onChange={e=>setOwnerForm({...ownerForm,credits_tiktok:e.target.value})}
-                      placeholder="تيك توك (يوزر أو رابط)" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/>
-
-                    <input type="password" value={ownerForm.owner_password||""} onChange={e=>setOwnerForm({...ownerForm,owner_password:e.target.value})}
-                      placeholder="تغيير كلمة سر الحقوق" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none"/>
-
-                    <button type="button" onClick={async()=>{
-                      try {
-                        const payload = {
-                          owner_password: ownerForm.owner_password || "owner2026",
-                          credits_enabled: ownerForm.credits_enabled !== false,
-                          credits_position: ownerForm.credits_position || "footer",
-                          credits_title: ownerForm.credits_title || "",
-                          credits_name: ownerForm.credits_name || "",
-                          credits_text: ownerForm.credits_text || "",
-                          credits_whatsapp: ownerForm.credits_whatsapp || "",
-                          credits_instagram: ownerForm.credits_instagram || "",
-                          credits_facebook: ownerForm.credits_facebook || "",
-                          credits_tiktok: ownerForm.credits_tiktok || "",
-                        };
-                        const r = await fetch(`${SB_URL}/rest/v1/settings?id=eq.1`, {
-                          method: "PATCH", headers: {...headers, "Content-Type":"application/json", "Prefer":"return=minimal"},
-                          body: JSON.stringify(payload)
-                        });
-                        if (!r.ok) {
-                          const t = await r.text();
-                          throw new Error(t || "فشل الحفظ — نفّذ SQL أولاً");
-                        }
-                        setSettings(prev => ({...prev, ...payload}));
-                        try { localStorage.removeItem("luxe_data_v1"); } catch(_){}
-                        showToast("تم حفظ الحقوق ✓");
-                        setOwnerOpen(false);
-                      } catch(e) {
-                        showToast(String(e.message||e).slice(0,120), "err");
-                      }
-                    }} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal text-sm font-bold btn-3d">
-                      حفظ أونلاين
-                    </button>
-                    <button type="button" onClick={()=>{ sessionStorage.removeItem("luxe_owner_ok"); setOwnerUnlocked(false); setOwnerPass(""); }}
-                      className="w-full py-2 text-xs text-gold-600">تسجيل خروج من لوحة الحقوق</button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
+          
+                  
 
           {deleteConfirm && (
             <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
