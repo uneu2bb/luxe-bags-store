@@ -117,6 +117,49 @@
     /* قص الصورة */
     .crop-overlay{touch-action:none;user-select:none}
 
+
+    /* قائمة منسدلة فخمة بدل select النظام */
+    .lux-dd{position:relative;width:100%}
+    .lux-dd-btn{
+      width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:12px 14px;border-radius:14px;text-align:right;direction:rtl;
+      background:linear-gradient(145deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02));
+      border:1px solid rgba(192,138,51,0.28);
+      color:#f5edd8;font-size:13px;font-weight:500;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 8px 20px rgba(0,0,0,.25);
+      transition:border-color .2s,box-shadow .2s,transform .15s;
+    }
+    .lux-dd-btn:active{transform:scale(0.98)}
+    .lux-dd-btn.open{
+      border-color:rgba(192,138,51,0.55);
+      box-shadow:0 0 0 3px rgba(192,138,51,0.12),0 10px 28px rgba(0,0,0,.35);
+    }
+    .lux-dd-menu{
+      position:absolute;z-index:80;left:0;right:0;top:calc(100% + 8px);
+      max-height:260px;overflow-y:auto;border-radius:16px;
+      background:linear-gradient(180deg,#1c1814 0%,#14110e 100%);
+      border:1px solid rgba(192,138,51,0.3);
+      box-shadow:0 20px 50px rgba(0,0,0,.55),0 0 0 1px rgba(192,138,51,0.08);
+      padding:6px;direction:rtl;
+    }
+    .lux-dd-item{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      width:100%;padding:11px 12px;border-radius:12px;border:none;background:transparent;
+      color:#e8dcc8;font-size:13px;text-align:right;cursor:pointer;
+      transition:background .15s,color .15s;
+    }
+    .lux-dd-item:hover,.lux-dd-item:active{background:rgba(192,138,51,0.12);color:#f5e6c8}
+    .lux-dd-item.active{
+      background:linear-gradient(135deg,rgba(192,138,51,0.22),rgba(192,138,51,0.08));
+      color:#dbbc72;font-weight:600;
+    }
+    .lux-dd-badge{
+      font-size:10px;padding:2px 8px;border-radius:999px;
+      background:rgba(192,138,51,0.15);color:#c08a33;border:1px solid rgba(192,138,51,0.25);
+    }
+    .lux-dd-chevron{width:16px;height:16px;opacity:.7;transition:transform .2s;flex-shrink:0}
+    .lux-dd-btn.open .lux-dd-chevron{transform:rotate(180deg)}
+
     /* زر التواصل العائم — أسفل اليسار فقط، بدون حجب الشاشة */
     .fab-social{
       position: fixed !important;
@@ -298,10 +341,13 @@
       const [selectedProduct, setSelectedProduct] = useState(null);
       const [selectedColor, setSelectedColor] = useState("");
       const [adminCatFilter, setAdminCatFilter] = useState("");
+      const [openDd, setOpenDd] = useState(""); // "formCat" | "filterCat" | ""
       const [cropSrc, setCropSrc] = useState(null);
       const [cropCb, setCropCb] = useState(null);
       const [cropZoom, setCropZoom] = useState(1);
       const [cropOff, setCropOff] = useState({x:0,y:0});
+      const [cropAspect, setCropAspect] = useState("1:1"); // 1:1 | 3:4 | 4:3 | free
+      const [cropBox, setCropBox] = useState({x:10,y:10,w:80,h:80}); // نسب مئوية
       const [toast, setToast] = useState(null);
       const [adminPass, setAdminPass] = useState("");
       const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem("luxe_admin_ok")==="1");
@@ -343,25 +389,63 @@
 
       const showToast = (m, type="ok") => { setToast({msg:m, type}); setTimeout(()=>setToast(null), 2500); };
 
+      
+      const setAspect = (asp) => {
+        setCropAspect(asp);
+        const box = {x:10,y:10,w:80,h:80};
+        if (asp === "1:1") { box.w = 70; box.h = 70; box.x = 15; box.y = 15; }
+        else if (asp === "3:4") { box.w = 60; box.h = 80; box.x = 20; box.y = 10; }
+        else if (asp === "4:3") { box.w = 80; box.h = 60; box.x = 10; box.y = 20; }
+        else { box.w = 75; box.h = 75; box.x = 12.5; box.y = 12.5; }
+        setCropBox(box);
+      };
+
       const applyCrop = async () => {
         if (!cropSrc || !cropCb) return;
         try {
           const img = new Image();
           await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = cropSrc; });
-          const size = 900;
+          // منطقة القص كنسب من الصورة المعروضة مع الزوم والإزاحة
+          const viewW = 100, viewH = 100;
+          const scale = Math.max(viewW / img.width, viewH / img.height) * cropZoom;
+          const dispW = img.width * scale;
+          const dispH = img.height * scale;
+          const dispX = (viewW - dispW) / 2 + (cropOff.x / 3); // تقريب إزاحة الشاشة
+          const dispY = (viewH - dispH) / 2 + (cropOff.y / 3);
+          // cropBox بالنسب المئوية من الحاوية
+          const sx = ((cropBox.x - dispX) / scale);
+          const sy = ((cropBox.y - dispY) / scale);
+          const sw = cropBox.w / scale;
+          const sh = cropBox.h / scale;
+          const srcX = Math.max(0, Math.min(img.width, sx / 100 * img.width * (100/viewW) * (img.width/(img.width))));
+          // حساب أدق بالبكسل
+          const imgScale = Math.max(900 / img.width, 900 / img.height) * cropZoom;
+          // نستخدم canvas وسيط نرسم فيه الصورة كما على الشاشة ثم نقص المربع
+          const stage = 900;
+          const sc = document.createElement("canvas");
+          sc.width = stage; sc.height = stage;
+          const sctx = sc.getContext("2d");
+          sctx.imageSmoothingEnabled = true;
+          sctx.imageSmoothingQuality = "high";
+          const drawW = img.width * Math.max(stage / img.width, stage / img.height) * cropZoom;
+          const drawH = img.height * Math.max(stage / img.width, stage / img.height) * cropZoom;
+          const drawX = (stage - drawW) / 2 + cropOff.x * (stage/300);
+          const drawY = (stage - drawH) / 2 + cropOff.y * (stage/300);
+          sctx.fillStyle = "#1a1714";
+          sctx.fillRect(0, 0, stage, stage);
+          sctx.drawImage(img, drawX, drawY, drawW, drawH);
+          const cutX = stage * cropBox.x / 100;
+          const cutY = stage * cropBox.y / 100;
+          const cutW = stage * cropBox.w / 100;
+          const cutH = stage * cropBox.h / 100;
+          const outW = Math.max(400, Math.round(cutW));
+          const outH = Math.max(400, Math.round(cutH));
           const canvas = document.createElement("canvas");
-          canvas.width = size; canvas.height = size;
+          canvas.width = outW; canvas.height = outH;
           const ctx = canvas.getContext("2d");
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = "high";
-          const scale = Math.max(size / img.width, size / img.height) * cropZoom;
-          const dw = img.width * scale;
-          const dh = img.height * scale;
-          const dx = (size - dw) / 2 + cropOff.x;
-          const dy = (size - dh) / 2 + cropOff.y;
-          ctx.fillStyle = "#1a1714";
-          ctx.fillRect(0, 0, size, size);
-          ctx.drawImage(img, dx, dy, dw, dh);
+          ctx.drawImage(sc, cutX, cutY, cutW, cutH, 0, 0, outW, outH);
           let q = 0.88;
           let out = canvas.toDataURL("image/jpeg", q);
           while (out.length > 450 * 1365 && q > 0.55) {
@@ -371,8 +455,9 @@
           const cb = cropCb;
           setCropSrc(null); setCropCb(null);
           if (typeof cb === "function") cb(out);
-          showToast("تم ضبط الصورة ✓");
+          showToast("تم قص الصورة ✓");
         } catch (e) {
+          console.error(e);
           showToast("فشل قص الصورة", "err");
         }
       };
@@ -385,6 +470,8 @@
         reader.onload = () => {
           setCropZoom(1);
           setCropOff({x:0,y:0});
+          setCropAspect("1:1");
+          setCropBox({x:10,y:10,w:80,h:80});
           setCropSrc(reader.result);
           setCropCb(() => () => onDone);
         };
@@ -723,7 +810,7 @@
                 </div>
                 <div className="flex overflow-x-auto border-b border-gold-800/30">
                   {["settings","products","categories","branches","social"].map(t=>(
-                    <button key={t} onClick={()=>setTab(t)} className={`px-3 py-2.5 text-xs whitespace-nowrap ${tab===t?"text-gold-300 border-b-2 border-gold-500":"text-gold-600"}`}>
+                    <button key={t} onClick={()=>{setTab(t);setOpenDd("");}} className={`px-3 py-2.5 text-xs whitespace-nowrap ${tab===t?"text-gold-300 border-b-2 border-gold-500":"text-gold-600"}`}>
                       {{settings:"الإعدادات",products:"منتجات",categories:"أقسام",branches:"فروع",social:"تواصل"}[t]}
                     </button>
                   ))}
@@ -756,10 +843,28 @@
                   )}
                   {tab==="products" && (
                     <>
-                      <select value={form.category_id} onChange={e=>setForm({...form,category_id:e.target.value})} className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100">
-                        <option value="">اختر قسم</option>
-                        {categories.map(c=><option key={c.id} value={c.id} className="bg-charcoal">{c.title}</option>)}
-                      </select>
+                      <div className="lux-dd">
+                        <button type="button" className={`lux-dd-btn ${openDd==="formCat"?"open":""}`} onClick={()=>setOpenDd(openDd==="formCat"?"":"formCat")}>
+                          <span className={form.category_id?"text-gold-100":"text-gold-600"}>
+                            {form.category_id ? (categories.find(x=>String(x.id)===String(form.category_id))||{}).title || "قسم محدد" : "اختر قسم"}
+                          </span>
+                          <svg className="lux-dd-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+                        </button>
+                        {openDd==="formCat" && (
+                          <div className="lux-dd-menu">
+                            <button type="button" className={`lux-dd-item ${!form.category_id?"active":""}`} onClick={()=>{setForm({...form,category_id:""});setOpenDd("");}}>
+                              <span>اختر قسم</span>
+                            </button>
+                            {categories.map(cat=>(
+                              <button type="button" key={cat.id} className={`lux-dd-item ${String(form.category_id)===String(cat.id)?"active":""}`}
+                                onClick={()=>{setForm({...form,category_id:cat.id});setOpenDd("");}}>
+                                <span>{cat.title}</span>
+                                <span className="lux-dd-badge">{(cat.products||[]).length}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="اسم المنتج" className="w-full bg-white/5 border border-gold-800/40 rounded-lg px-3 py-2.5 text-sm text-gold-100 outline-none"/>
                       <div className="space-y-1.5">
                         <label className="text-xs text-gold-500">صورة المنتج (رفع من الجهاز — تُضغط تلقائياً)</label>
@@ -804,13 +909,29 @@
                       }} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal font-bold text-sm">إضافة منتج</button>
                       <div className="pt-3 space-y-3">
                         <p className="text-xs text-gold-500 font-medium">المنتجات حسب القسم</p>
-                        <select value={adminCatFilter} onChange={e=>setAdminCatFilter(e.target.value)}
-                          className="w-full bg-white/5 border border-gold-700/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none">
-                          <option value="" className="bg-charcoal">كل الأقسام</option>
-                          {categories.map(cat => (
-                            <option key={cat.id} value={cat.id} className="bg-charcoal">{cat.title} ({(cat.products||[]).length})</option>
-                          ))}
-                        </select>
+                        <div className="lux-dd">
+                          <button type="button" className={`lux-dd-btn ${openDd==="filterCat"?"open":""}`} onClick={()=>setOpenDd(openDd==="filterCat"?"":"filterCat")}>
+                            <span className="text-gold-100">
+                              {adminCatFilter ? ((categories.find(x=>String(x.id)===String(adminCatFilter))||{}).title || "قسم") : "كل الأقسام"}
+                            </span>
+                            <svg className="lux-dd-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+                          </button>
+                          {openDd==="filterCat" && (
+                            <div className="lux-dd-menu">
+                              <button type="button" className={`lux-dd-item ${!adminCatFilter?"active":""}`} onClick={()=>{setAdminCatFilter("");setOpenDd("");}}>
+                                <span>كل الأقسام</span>
+                                <span className="lux-dd-badge">{categories.reduce((s,cat)=>s+(cat.products||[]).length,0)}</span>
+                              </button>
+                              {categories.map(cat=>(
+                                <button type="button" key={cat.id} className={`lux-dd-item ${String(adminCatFilter)===String(cat.id)?"active":""}`}
+                                  onClick={()=>{setAdminCatFilter(cat.id);setOpenDd("");}}>
+                                  <span>{cat.title}</span>
+                                  <span className="lux-dd-badge">{(cat.products||[]).length}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                         {(adminCatFilter ? categories.filter(cat => String(cat.id)===String(adminCatFilter)) : categories).map(cat => (
                           <div key={cat.id} className="space-y-2">
                             <div className="flex items-center gap-2 pt-2">
@@ -1050,26 +1171,41 @@
           )}
 
           
-          {/* نافذة قص وضبط الصورة */}
+          {/* نافذة قص الصورة الحر */}
           {cropSrc && (
-            <div className="fixed inset-0 z-[10050] flex items-center justify-center p-3 bg-black/85 backdrop-blur-sm">
-              <div className="w-full max-w-md rounded-3xl border border-gold-700/40 bg-[#14110e] shadow-2xl overflow-hidden">
-                <div className="flex items-center justify-between p-4 border-b border-gold-800/40">
+            <div className="fixed inset-0 z-[10050] flex items-center justify-center p-3 bg-black/90 backdrop-blur-sm">
+              <div className="w-full max-w-md rounded-3xl border border-gold-700/40 bg-[#14110e] shadow-2xl overflow-hidden max-h-[95vh] flex flex-col">
+                <div className="flex items-center justify-between p-4 border-b border-gold-800/40 shrink-0">
                   <div>
-                    <h3 className="text-sm font-bold text-gold-100">ضبط الصورة</h3>
-                    <p className="text-[10px] text-gold-600">قرّبي / بعّدي وحرّكي الصورة</p>
+                    <h3 className="text-sm font-bold text-gold-100">قص الصورة</h3>
+                    <p className="text-[10px] text-gold-600">اختاري المقاس، قرّبي، وحرّكي الإطار</p>
                   </div>
                   <button type="button" onClick={()=>{setCropSrc(null);setCropCb(null);}} className="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center text-gold-400"><Icon d={I.x}/></button>
                 </div>
-                <div
-                  className="relative mx-4 mt-4 aspect-square rounded-2xl overflow-hidden border border-gold-700/30 bg-black crop-overlay"
-                  onTouchStart={(e)=>{ const t=e.touches[0]; this._cx=t.clientX; this._cy=t.clientY; }}
-                >
+
+                {/* نسب القص */}
+                <div className="flex gap-1.5 px-4 pt-3 shrink-0 overflow-x-auto">
+                  {[
+                    {id:"1:1", label:"مربع"},
+                    {id:"3:4", label:"عمودي"},
+                    {id:"4:3", label:"أفقي"},
+                    {id:"free", label:"حر"},
+                  ].map(a => (
+                    <button key={a.id} type="button" onClick={()=>setAspect(a.id)}
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap border transition ${cropAspect===a.id ? "bg-gold-500/20 border-gold-500 text-gold-200" : "bg-white/5 border-gold-800/40 text-gold-600"}`}>
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* منطقة القص */}
+                <div className="relative mx-4 mt-3 aspect-square rounded-2xl overflow-hidden border border-gold-700/30 bg-black shrink-0"
+                  id="crop-stage">
                   <img
                     src={cropSrc}
                     alt=""
                     draggable={false}
-                    className="absolute select-none"
+                    className="absolute select-none pointer-events-none"
                     style={{
                       width: `${100 * cropZoom}%`,
                       height: `${100 * cropZoom}%`,
@@ -1079,19 +1215,106 @@
                       maxWidth: "none",
                       objectFit: "cover"
                     }}
+                  />
+                  {/* طبقة تعتيم خارج إطار القص */}
+                  <div className="absolute inset-0 pointer-events-none" style={{
+                    background: `linear-gradient(#000a,#000a) 0 0 / 100% ${cropBox.y}% no-repeat,
+                                 linear-gradient(#000a,#000a) 0 ${cropBox.y+cropBox.h}% / 100% ${100-cropBox.y-cropBox.h}% no-repeat,
+                                 linear-gradient(#000a,#000a) 0 ${cropBox.y}% / ${cropBox.x}% ${cropBox.h}% no-repeat,
+                                 linear-gradient(#000a,#000a) ${cropBox.x+cropBox.w}% ${cropBox.y}% / ${100-cropBox.x-cropBox.w}% ${cropBox.h}% no-repeat`
+                  }}/>
+                  {/* إطار القص القابل للسحب */}
+                  <div
+                    className="absolute border-2 border-gold-400 rounded-lg shadow-[0_0_0_1px_rgba(192,138,51,0.3)]"
+                    style={{
+                      left: `${cropBox.x}%`, top: `${cropBox.y}%`,
+                      width: `${cropBox.w}%`, height: `${cropBox.h}%`,
+                      touchAction: "none", cursor: "move"
+                    }}
                     onPointerDown={(e)=>{
+                      e.preventDefault();
                       e.currentTarget.setPointerCapture(e.pointerId);
+                      const parent = e.currentTarget.parentElement.getBoundingClientRect();
                       const sx = e.clientX, sy = e.clientY;
-                      const ox = cropOff.x, oy = cropOff.y;
-                      const move = (ev) => setCropOff({x: ox + (ev.clientX - sx), y: oy + (ev.clientY - sy)});
+                      const ox = cropBox.x, oy = cropBox.y;
+                      const move = (ev) => {
+                        const dx = ((ev.clientX - sx) / parent.width) * 100;
+                        const dy = ((ev.clientY - sy) / parent.height) * 100;
+                        setCropBox(b => ({
+                          ...b,
+                          x: Math.max(0, Math.min(100 - b.w, ox + dx)),
+                          y: Math.max(0, Math.min(100 - b.h, oy + dy))
+                        }));
+                      };
                       const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
                       window.addEventListener("pointermove", move);
                       window.addEventListener("pointerup", up);
                     }}
-                  />
-                  <div className="absolute inset-0 pointer-events-none border-2 border-gold-500/50 rounded-2xl shadow-[inset_0_0_40px_rgba(192,138,51,0.15)]"/>
+                  >
+                    {/* زوايا للتحجيم */}
+                    {["nw","ne","sw","se"].map(corner => (
+                      <div key={corner}
+                        className="absolute w-4 h-4 bg-gold-400 rounded-sm border border-charcoal"
+                        style={{
+                          left: corner.includes("w") ? -6 : "auto",
+                          right: corner.includes("e") ? -6 : "auto",
+                          top: corner.includes("n") ? -6 : "auto",
+                          bottom: corner.includes("s") ? -6 : "auto",
+                          cursor: corner==="nw"||corner==="se" ? "nwse-resize" : "nesw-resize",
+                          touchAction: "none"
+                        }}
+                        onPointerDown={(e)=>{
+                          e.preventDefault();
+                          e.stopPropagation();
+                          e.currentTarget.setPointerCapture(e.pointerId);
+                          const parent = e.currentTarget.parentElement.parentElement.getBoundingClientRect();
+                          const sx = e.clientX, sy = e.clientY;
+                          const ob = {...cropBox};
+                          const move = (ev) => {
+                            const dx = ((ev.clientX - sx) / parent.width) * 100;
+                            const dy = ((ev.clientY - sy) / parent.height) * 100;
+                            setCropBox(() => {
+                              let {x,y,w,h} = {...ob};
+                              if (corner.includes("e")) w = Math.max(20, Math.min(100 - x, ob.w + dx));
+                              if (corner.includes("s")) h = Math.max(20, Math.min(100 - y, ob.h + dy));
+                              if (corner.includes("w")) {
+                                const nw = Math.max(20, ob.w - dx);
+                                const nx = ob.x + (ob.w - nw);
+                                if (nx >= 0) { x = nx; w = nw; }
+                              }
+                              if (corner.includes("n")) {
+                                const nh = Math.max(20, ob.h - dy);
+                                const ny = ob.y + (ob.h - nh);
+                                if (ny >= 0) { y = ny; h = nh; }
+                              }
+                              if (cropAspect === "1:1") {
+                                const s = Math.min(w, h);
+                                w = s; h = s;
+                              } else if (cropAspect === "3:4") {
+                                h = w * 4/3; if (y+h>100) h=100-y; w = h * 3/4;
+                              } else if (cropAspect === "4:3") {
+                                w = h * 4/3; if (x+w>100) w=100-x; h = w * 3/4;
+                              }
+                              return {x,y,w,h};
+                            });
+                          };
+                          const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+                          window.addEventListener("pointermove", move);
+                          window.addEventListener("pointerup", up);
+                        }}
+                      />
+                    ))}
+                    {/* خطوط الشبكة */}
+                    <div className="absolute inset-0 pointer-events-none opacity-30">
+                      <div className="absolute left-1/3 top-0 bottom-0 w-px bg-gold-300/50"/>
+                      <div className="absolute left-2/3 top-0 bottom-0 w-px bg-gold-300/50"/>
+                      <div className="absolute top-1/3 left-0 right-0 h-px bg-gold-300/50"/>
+                      <div className="absolute top-2/3 left-0 right-0 h-px bg-gold-300/50"/>
+                    </div>
+                  </div>
                 </div>
-                <div className="p-4 space-y-3">
+
+                <div className="p-4 space-y-3 shrink-0">
                   <div className="flex items-center gap-3">
                     <span className="text-[11px] text-gold-600 w-12">تصغير</span>
                     <input type="range" min="1" max="3" step="0.05" value={cropZoom}
@@ -1099,22 +1322,35 @@
                       className="flex-1 accent-amber-500"/>
                     <span className="text-[11px] text-gold-600 w-12 text-left">تكبير</span>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] text-gold-600 w-12">تحريك</span>
+                    <input type="range" min="-80" max="80" step="1" value={cropOff.x}
+                      onChange={e=>setCropOff(o=>({...o,x:+e.target.value}))}
+                      className="flex-1 accent-amber-500"/>
+                    <span className="text-[11px] text-gold-600 w-12 text-left">أفقي</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] text-gold-600 w-12">تحريك</span>
+                    <input type="range" min="-80" max="80" step="1" value={cropOff.y}
+                      onChange={e=>setCropOff(o=>({...o,y:+e.target.value}))}
+                      className="flex-1 accent-amber-500"/>
+                    <span className="text-[11px] text-gold-600 w-12 text-left">عمودي</span>
+                  </div>
                   <div className="flex gap-2">
-                    <button type="button" onClick={()=>{setCropZoom(1);setCropOff({x:0,y:0});}}
+                    <button type="button" onClick={()=>{setCropZoom(1);setCropOff({x:0,y:0});setAspect(cropAspect);}}
                       className="px-3 py-2.5 rounded-xl bg-white/5 text-gold-500 text-xs">إعادة</button>
                     <button type="button" onClick={applyCrop}
                       className="flex-1 py-2.5 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal text-sm font-bold btn-3d">
                       قص وحفظ
                     </button>
                   </div>
-                  <p className="text-[10px] text-gold-700 text-center">يُضغط الحجم تلقائياً مع الحفاظ على الوضوح</p>
+                  <p className="text-[10px] text-gold-700 text-center">اسحبي الإطار أو زواياه للقص كما تريدين — مع ضغط ذكي للجودة</p>
                 </div>
               </div>
             </div>
           )}
 
-
-          {deleteConfirm && (
+{deleteConfirm && (
             <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
               <div className="w-full max-w-sm rounded-2xl border border-gold-700/40 bg-[#1a1714] p-6 shadow-2xl space-y-4">
                 <div className="text-center">
