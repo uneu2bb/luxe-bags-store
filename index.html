@@ -360,6 +360,7 @@
       const [openDd, setOpenDd] = useState(""); // "formCat" | "filterCat" | ""
       const [ownerOpen, setOwnerOpen] = useState(false);
       const [ownerUnlocked, setOwnerUnlocked] = useState(() => sessionStorage.getItem("luxe_owner_ok")==="1");
+      const [creditsOpen, setCreditsOpen] = useState(false);
       const [ownerPass, setOwnerPass] = useState("");
       const [ownerForm, setOwnerForm] = useState({});
       const [footerTaps, setFooterTaps] = useState({count:0,last:0});
@@ -666,8 +667,35 @@
             </div>
           </header>
             {(settings.credits_enabled !== false && settings.credits_enabled !== "false") && (settings.credits_position==="header" || settings.credits_position==="both") && (settings.credits_name || settings.credits_text) && (
-              <div className="border-b border-gold-900/30 bg-black/20 px-4 py-2 text-center">
-                <p className="text-[10px] text-gold-700">{settings.credits_title || "تصميم وتطوير"} · <span className="text-gold-400 font-medium">{settings.credits_name}</span></p>
+              <div className="border-b border-gold-900/30 bg-gradient-to-b from-black/30 to-transparent px-4 py-2">
+                <button type="button" onClick={()=>setCreditsOpen(v=>!v)} className="mx-auto flex items-center justify-center gap-1.5 text-[11px] text-gold-500 hover:text-gold-300 transition">
+                  <span className="tracking-wide">{settings.credits_title || "تصميم وتطوير"}</span>
+                  <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${creditsOpen?"rotate-180":""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                {creditsOpen && (
+                  <div className="mt-2 mb-1 text-center">
+                    {settings.credits_name && <p className="text-sm font-semibold text-gold-200">{settings.credits_name}</p>}
+                    {settings.credits_text && <p className="text-xs text-gold-600 mt-0.5 leading-relaxed max-w-xs mx-auto">{settings.credits_text}</p>}
+                    <div className="flex items-center justify-center gap-2 mt-2.5 flex-wrap">
+                      {settings.credits_whatsapp && (
+                        <a href={`https://wa.me/${String(settings.credits_whatsapp).replace(/[^0-9+]/g,"")}`} target="_blank" rel="noopener"
+                          className="w-9 h-9 rounded-full bg-green-500/15 border border-green-500/30 flex items-center justify-center text-green-400"><Icon d={I.wa} className="w-4 h-4"/></a>
+                      )}
+                      {settings.credits_instagram && (
+                        <a href={String(settings.credits_instagram).startsWith("http")?settings.credits_instagram:`https://instagram.com/${settings.credits_instagram}`} target="_blank" rel="noopener"
+                          className="w-9 h-9 rounded-full bg-pink-500/15 border border-pink-500/30 flex items-center justify-center text-pink-300 text-[10px] font-bold">IG</a>
+                      )}
+                      {settings.credits_facebook && (
+                        <a href={String(settings.credits_facebook).startsWith("http")?settings.credits_facebook:`https://facebook.com/${settings.credits_facebook}`} target="_blank" rel="noopener"
+                          className="w-9 h-9 rounded-full bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-300 text-[10px] font-bold">FB</a>
+                      )}
+                      {settings.credits_tiktok && (
+                        <a href={String(settings.credits_tiktok).startsWith("http")?settings.credits_tiktok:`https://tiktok.com/@${settings.credits_tiktok}`} target="_blank" rel="noopener"
+                          className="w-9 h-9 rounded-full bg-white/5 border border-white/15 flex items-center justify-center text-gold-300 text-[10px] font-bold">TT</a>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -759,7 +787,12 @@
               {settings.footer_desc && <p className="text-gold-500 text-sm mb-4">{settings.footer_desc}</p>}
               {(settings.credits_enabled !== false && settings.credits_enabled !== "false") && (settings.credits_position==="footer" || settings.credits_position==="both" || !settings.credits_position) && (settings.credits_name || settings.credits_text) && (
                 <div className="mt-2 pt-4 border-t border-gold-900/30 max-w-sm mx-auto">
-                  <p className="text-[10px] tracking-[0.2em] text-gold-700 uppercase mb-1">{settings.credits_title || "تصميم وتطوير"}</p>
+                  <button type="button" onClick={()=>setCreditsOpen(v=>!v)} className="mx-auto flex items-center justify-center gap-1.5 text-[11px] text-gold-500 hover:text-gold-300 transition mb-1">
+                    <span className="tracking-wide">{settings.credits_title || "تصميم وتطوير"}</span>
+                    <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${creditsOpen?"rotate-180":""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  {creditsOpen && (
+                  <div className="mt-2">
                   {settings.credits_name && <p className="text-sm font-semibold text-gold-300 mb-1">{settings.credits_name}</p>}
                   {settings.credits_text && <p className="text-xs text-gold-600 mb-3 leading-relaxed">{settings.credits_text}</p>}
                   <div className="flex items-center justify-center gap-2 flex-wrap">
@@ -788,6 +821,8 @@
                       </a>
                     )}
                   </div>
+                  </div>
+                  )}
                 </div>
               )}
             </footer>
@@ -920,7 +955,7 @@
                         });
                       }
                     }} className={`px-3 py-2.5 text-xs whitespace-nowrap ${tab===t?"text-gold-300 border-b-2 border-gold-500":"text-gold-600"}`}>
-                      {{settings:"الإعدادات",products:"منتجات",categories:"أقسام",branches:"فروع",social:"تواصل",credits:"حقوقي"}[t]}
+                      {{settings:"الإعدادات",products:"منتجات",categories:"أقسام",branches:"فروع",social:"تواصل",credits:"◆"}[t]}
                     </button>
                   ))}
                 </div>
@@ -1185,22 +1220,21 @@
 
                   {tab==="credits" && (
                     <div className="space-y-3">
-                      <div className="p-3 rounded-xl bg-gold-500/10 border border-gold-700/30">
-                        <p className="text-xs text-gold-300 font-medium">هذا القسم محمي بكلمة سر خاصة</p>
-                        <p className="text-[10px] text-gold-600 mt-1">حتى لو شخص دخل لوحة التحكم، ما بيقدر يفتح حقوقك بدون كلمة السر المنفصلة</p>
-                      </div>
-
                       {!ownerUnlocked ? (
-                        <div className="space-y-3 py-4">
-                          <p className="text-xs text-gold-500 text-center">أدخلي كلمة سر الحقوق للمتابعة</p>
+                        <div className="py-12 px-2 flex flex-col items-center">
+                          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gold-400/20 to-gold-700/10 border border-gold-600/40 flex items-center justify-center mb-6 shadow-lg shadow-gold-900/30">
+                            <span className="text-2xl text-gold-400">◆</span>
+                          </div>
                           <input type="password" value={ownerPass} onChange={e=>setOwnerPass(e.target.value)}
-                            onKeyDown={e=>{ if(e.key==="Enter"){ if(ownerPass===(settings.owner_password||"owner2026")){ setOwnerUnlocked(true); sessionStorage.setItem("luxe_owner_ok","1"); showToast("تم فتح قسم الحقوق"); } else showToast("كلمة السر خطأ","err"); }}}
-                            className="w-full bg-white/5 border border-gold-700/40 rounded-xl px-4 py-3 text-sm text-gold-100 outline-none text-center tracking-widest"
-                            placeholder="كلمة سر الحقوق"/>
+                            onKeyDown={e=>{ if(e.key==="Enter"){ if(ownerPass===(settings.owner_password||"owner2026")){ setOwnerUnlocked(true); sessionStorage.setItem("luxe_owner_ok","1"); } else showToast("خطأ","err"); }}}
+                            className="w-full max-w-[220px] bg-transparent border-b border-gold-700/50 focus:border-gold-400 px-2 py-3 text-center text-gold-100 text-lg tracking-[0.35em] outline-none placeholder:text-gold-800"
+                            placeholder="••••••••" autoFocus/>
                           <button type="button" onClick={()=>{
-                            if(ownerPass===(settings.owner_password||"owner2026")){ setOwnerUnlocked(true); sessionStorage.setItem("luxe_owner_ok","1"); showToast("تم فتح قسم الحقوق"); }
-                            else showToast("كلمة السر خطأ","err");
-                          }} className="w-full py-3 rounded-xl bg-gradient-to-l from-gold-500 to-gold-600 text-charcoal text-sm font-bold">فتح القسم</button>
+                            if(ownerPass===(settings.owner_password||"owner2026")){ setOwnerUnlocked(true); sessionStorage.setItem("luxe_owner_ok","1"); }
+                            else showToast("خطأ","err");
+                          }} className="mt-7 w-12 h-12 rounded-full bg-gradient-to-br from-gold-400 to-gold-700 text-charcoal flex items-center justify-center shadow-lg shadow-gold-500/25 hover:scale-105 transition">
+                            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                          </button>
                         </div>
                       ) : (
                         <div className="space-y-3">
@@ -1224,23 +1258,31 @@
                               ))}
                             </div>
                           </div>
+                          <div className="space-y-1"><label className="text-[11px] text-gold-600">العنوان (تصميم وتطوير)</label>
                           <input value={ownerForm.credits_title||""} onChange={e=>setOwnerForm({...ownerForm,credits_title:e.target.value})}
-                            placeholder="عنوان (مثال: تصميم وتطوير)" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none"/>
+                            className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none"/></div>
+                          <div className="space-y-1"><label className="text-[11px] text-gold-600">الاسم</label>
                           <input value={ownerForm.credits_name||""} onChange={e=>setOwnerForm({...ownerForm,credits_name:e.target.value})}
-                            placeholder="اسمك أو اسم الاستوديو" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none"/>
+                            className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none"/></div>
+                          <div className="space-y-1"><label className="text-[11px] text-gold-600">الوصف</label>
                           <textarea value={ownerForm.credits_text||""} onChange={e=>setOwnerForm({...ownerForm,credits_text:e.target.value})} rows={2}
-                            placeholder="نص الحقوق / وصف قصير" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none resize-none"/>
-                          <p className="text-[11px] text-gold-600 pt-1">حساباتك</p>
+                            className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none resize-none"/></div>
+                          <p className="text-[11px] text-gold-500 font-medium pt-1">الحسابات (تظهر بعد ضغط السهم)</p>
+                          <div className="space-y-1"><label className="text-[11px] text-gold-600">واتساب (رقم مع رمز الدولة مثل 90555...)</label>
                           <input value={ownerForm.credits_whatsapp||""} onChange={e=>setOwnerForm({...ownerForm,credits_whatsapp:e.target.value})}
-                            placeholder="واتساب" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/>
+                            placeholder="90555..." className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/></div>
+                          <div className="space-y-1"><label className="text-[11px] text-gold-600">إنستغرام</label>
                           <input value={ownerForm.credits_instagram||""} onChange={e=>setOwnerForm({...ownerForm,credits_instagram:e.target.value})}
-                            placeholder="إنستغرام" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/>
+                            placeholder="@user أو رابط" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/></div>
+                          <div className="space-y-1"><label className="text-[11px] text-gold-600">فيسبوك</label>
                           <input value={ownerForm.credits_facebook||""} onChange={e=>setOwnerForm({...ownerForm,credits_facebook:e.target.value})}
-                            placeholder="فيسبوك" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/>
+                            placeholder="user أو رابط" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/></div>
+                          <div className="space-y-1"><label className="text-[11px] text-gold-600">تيك توك</label>
                           <input value={ownerForm.credits_tiktok||""} onChange={e=>setOwnerForm({...ownerForm,credits_tiktok:e.target.value})}
-                            placeholder="تيك توك" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/>
+                            placeholder="@user أو رابط" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/></div>
+                          <div className="space-y-1"><label className="text-[11px] text-gold-600">كلمة سر هذا القسم</label>
                           <input type="password" value={ownerForm.owner_password||""} onChange={e=>setOwnerForm({...ownerForm,owner_password:e.target.value})}
-                            placeholder="تغيير كلمة سر الحقوق" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none"/>
+                            className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none"/></div>
                           <button type="button" onClick={async()=>{
                             try {
                               const payload = {
