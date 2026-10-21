@@ -345,7 +345,7 @@
 
     function App() {
       const [categories, setCategories] = useState([]);
-      const [settings, setSettings] = useState({ site_name:"LUXE BAGS", tagline:"شنط نسائية فاخرة", header_desc:"", footer_desc:"", logo:"", whatsapp:"", facebook:"", instagram:"", admin_password:"admin123", owner_password:"owner2026", credits_enabled:true, credits_position:"footer", credits_title:"تصميم وتطوير", credits_name:"", credits_text:"", credits_whatsapp:"", credits_instagram:"", credits_facebook:"", credits_tiktok:"" });
+      const [settings, setSettings] = useState({ site_name:"LUXE BAGS", tagline:"شنط نسائية فاخرة", header_desc:"", footer_desc:"", logo:"", whatsapp:"", facebook:"", instagram:"", admin_password:"admin123", owner_password:"owner2026", credits_enabled:true, credits_position:"footer", credits_title:"تصميم وتطوير", credits_name:"", credits_text:"", credits_whatsapp:"", credits_instagram:"", credits_facebook:"", credits_tiktok:"", credits_telegram:"" });
       const [branches, setBranches] = useState([]);
       const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem("luxe_cart")||"[]"); } catch { return []; } });
       const [currency, setCurrency] = useState(() => localStorage.getItem("luxe_currency") || "TRY");
@@ -706,6 +706,13 @@
                           <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 0010.94 4.37V13a8.21 8.21 0 005.5 2.11V11.6a4.85 4.85 0 01-2.99-1.02 4.86 4.86 0 01-1.51-1.89h3.5z"/></svg>
                         </a>
                       )}
+                      {settings.credits_telegram && (
+                        <a href={String(settings.credits_telegram).startsWith("http")?settings.credits_telegram:(String(settings.credits_telegram).startsWith("t.me")?`https://${settings.credits_telegram}`:`https://t.me/${String(settings.credits_telegram).replace("@","")}`)} target="_blank" rel="noopener"
+                          className="group relative w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95"
+                          style={{background:"linear-gradient(145deg,#2AABEE,#229ED9)",boxShadow:"0 4px 16px rgba(42,171,238,0.35), inset 0 1px 0 rgba(255,255,255,0.15)"}}>
+                          <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.458.02.889-.15 1.562-.788 5.36-.788 5.36s-.088.348-.33.357a.68.68 0 0 1-.458-.14l-1.968-1.31-1.01.97a.49.49 0 0 1-.36.14l.132-1.9 3.45-3.12c.15-.13.02-.2-.1-.07l-4.26 2.68-1.84-.57c-.4-.13-.4-.4.08-.6l7.19-2.77z"/></svg>
+                        </a>
+                      )}
                     </div>
                   </div>
                 )}
@@ -835,6 +842,13 @@
                         className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95"
                         style={{background:"linear-gradient(145deg,#222,#000)",boxShadow:"0 4px 16px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12)"}}>
                         <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 0010.94 4.37V13a8.21 8.21 0 005.5 2.11V11.6a4.85 4.85 0 01-2.99-1.02 4.86 4.86 0 01-1.51-1.89h3.5z"/></svg>
+                      </a>
+                    )}
+                    {settings.credits_telegram && (
+                      <a href={String(settings.credits_telegram).startsWith("http")?settings.credits_telegram:(String(settings.credits_telegram).startsWith("t.me")?`https://${settings.credits_telegram}`:`https://t.me/${String(settings.credits_telegram).replace("@","")}`)} target="_blank" rel="noopener"
+                        className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95"
+                        style={{background:"linear-gradient(145deg,#2AABEE,#229ED9)",boxShadow:"0 4px 16px rgba(42,171,238,0.4), inset 0 1px 0 rgba(255,255,255,0.15)"}}>
+                        <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.458.02.889-.15 1.562-.788 5.36-.788 5.36s-.088.348-.33.357a.68.68 0 0 1-.458-.14l-1.968-1.31-1.01.97a.49.49 0 0 1-.36.14l.132-1.9 3.45-3.12c.15-.13.02-.2-.1-.07l-4.26 2.68-1.84-.57c-.4-.13-.4-.4.08-.6l7.19-2.77z"/></svg>
                       </a>
                     )}
                   </div>
@@ -969,6 +983,7 @@
                           credits_instagram: settings.credits_instagram || "",
                           credits_facebook: settings.credits_facebook || "",
                           credits_tiktok: settings.credits_tiktok || "",
+                          credits_telegram: settings.credits_telegram || "",
                         });
                       }
                     }} className={`px-3 py-2.5 text-xs whitespace-nowrap ${tab===t?"text-gold-300 border-b-2 border-gold-500":"text-gold-600"}`}>
@@ -1297,6 +1312,9 @@
                           <div className="space-y-1"><label className="text-[11px] text-gold-600">تيك توك</label>
                           <input value={ownerForm.credits_tiktok||""} onChange={e=>setOwnerForm({...ownerForm,credits_tiktok:e.target.value})}
                             placeholder="@user أو رابط" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/></div>
+                          <div className="space-y-1"><label className="text-[11px] text-gold-600">تيليجرام</label>
+                          <input value={ownerForm.credits_telegram||""} onChange={e=>setOwnerForm({...ownerForm,credits_telegram:e.target.value})}
+                            placeholder="@user أو رابط t.me" className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none" dir="ltr"/></div>
                           <div className="space-y-1"><label className="text-[11px] text-gold-600">كلمة سر هذا القسم</label>
                           <input type="password" value={ownerForm.owner_password||""} onChange={e=>setOwnerForm({...ownerForm,owner_password:e.target.value})}
                             className="w-full bg-white/5 border border-gold-800/40 rounded-xl px-3 py-2.5 text-sm text-gold-100 outline-none"/></div>
@@ -1313,6 +1331,7 @@
                                 credits_instagram: ownerForm.credits_instagram || "",
                                 credits_facebook: ownerForm.credits_facebook || "",
                                 credits_tiktok: ownerForm.credits_tiktok || "",
+                                credits_telegram: ownerForm.credits_telegram || "",
                               };
                               const r = await fetch(`${SB_URL}/rest/v1/settings?id=eq.1`, {
                                 method: "PATCH", headers: {...headers, "Content-Type":"application/json", "Prefer":"return=minimal"},
