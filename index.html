@@ -12,7 +12,7 @@
   <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
   <link rel="dns-prefetch" href="https://unpkg.com">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
   <script>
     tailwind.config = { theme: { extend: { colors: {
       gold: {50:'#fbf8f1',100:'#f5edd8',200:'#e9d7a8',300:'#dbbc72',400:'#cfa14a',500:'#c08a33',600:'#a66d28',700:'#855223',800:'#6e4323',900:'#5c3921'},
@@ -20,196 +20,118 @@
     }}}}
   </script>
   <style>
-    *{font-family:'Cairo',sans-serif}
-    .font-playfair{font-family:'Playfair Display',serif}
-    body{background:#0f0d0b;color:#f5f0e8}
-    .glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08)}
-    .gold-text{background:linear-gradient(90deg,#dbbc72,#c08a33);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .cat-card:hover{transform:translateY(-8px);box-shadow:0 20px 40px -10px rgba(192,138,51,.3)}
-    .cat-card:hover img{transform:scale(1.08)}
-    .cat-card,.product-card{
-      transition: transform .4s cubic-bezier(.22,1,.36,1), box-shadow .4s ease, border-color .3s ease;
-      transform-style: preserve-3d;
-      perspective: 800px;
-      will-change: transform;
+    :root {
+      --bg:#0a0908; --elev:#12100e; --card:#161310;
+      --gold:#c4a35a; --gold-l:#e8d5a3; --gold-d:#8a6d3b;
+      --cream:#f3ebe0; --muted:#9a8f7e;
+      --line:rgba(196,163,90,.18); --line2:rgba(196,163,90,.35);
     }
-    .cat-card:hover, .cat-card:active{
-      transform: translateY(-10px) rotateX(4deg) scale(1.02);
-      box-shadow: 0 25px 50px -12px rgba(192,138,51,.35), 0 0 0 1px rgba(192,138,51,.15);
-      border-color: rgba(192,138,51,.35) !important;
-    }
-    .cat-card:hover img, .cat-card:active img{transform:scale(1.1)}
-    .product-card:hover, .product-card:active{
-      transform: translateY(-8px) rotateX(3deg) scale(1.015);
-      box-shadow: 0 20px 40px -10px rgba(192,138,51,.3), 0 0 0 1px rgba(192,138,51,.12);
-    }
-    .product-card:active, .cat-card:active{transform: translateY(-4px) scale(0.98)}
-    .logo-3d{
-      transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s ease;
-    }
-    .logo-3d:active{
-      transform: scale(0.92) rotate(-6deg);
-    }
-    .btn-3d{
-      transition: transform .2s ease, box-shadow .2s ease;
-      box-shadow: 0 6px 0 rgba(0,0,0,.25), 0 10px 20px rgba(192,138,51,.2);
-    }
-    .btn-3d:active{
-      transform: translateY(3px);
-      box-shadow: 0 2px 0 rgba(0,0,0,.25), 0 4px 10px rgba(192,138,51,.15);
-    }
-    .pressable{
-      transition: transform .15s ease, opacity .15s ease;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .pressable:active{transform: scale(0.94); opacity: 0.9}
+    *{font-family:'Cairo',sans-serif;box-sizing:border-box}
+    .font-serif,.font-playfair{font-family:'Cormorant Garamond','Playfair Display',serif}
+    html{scroll-behavior:smooth}
     body{
-      background: radial-gradient(ellipse at 50% 0%, #1a1510 0%, #0f0d0b 55%, #0a0908 100%);
+      background:var(--bg);color:var(--cream);min-height:100vh;
+      background-image:
+        radial-gradient(ellipse 120% 80% at 50% -20%,rgba(196,163,90,.13),transparent 55%),
+        radial-gradient(ellipse 70% 50% at 100% 60%,rgba(80,50,20,.14),transparent 50%),
+        radial-gradient(ellipse 50% 40% at 0% 90%,rgba(50,35,15,.12),transparent 45%);
+      background-attachment:fixed;
     }
+    ::selection{background:rgba(196,163,90,.35);color:#fff}
     .glass{
-      background: linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
-      backdrop-filter: blur(24px);
-      border: 1px solid rgba(192,138,51,0.12);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 30px rgba(0,0,0,.35);
+      background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015));
+      backdrop-filter:blur(28px) saturate(1.2);-webkit-backdrop-filter:blur(28px) saturate(1.2);
+      border:1px solid var(--line);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 25px 50px -20px rgba(0,0,0,.7);
     }
-    .card-3d{
-      background: linear-gradient(160deg, rgba(40,34,28,0.9), rgba(20,17,14,0.95));
-      border: 1px solid rgba(192,138,51,0.18);
-      box-shadow:
-        0 1px 0 rgba(255,255,255,0.06) inset,
-        0 20px 40px -15px rgba(0,0,0,.6),
-        0 0 40px -20px rgba(192,138,51,.15);
-    }
-    header{
-      background: linear-gradient(180deg, rgba(15,13,11,0.95), rgba(15,13,11,0.85)) !important;
-      border-bottom: 1px solid rgba(192,138,51,0.15) !important;
-      box-shadow: 0 10px 30px rgba(0,0,0,.4);
-    }
-    @keyframes shimmer {
-      0%{background-position: -200% 0}
-      100%{background-position: 200% 0}
+    .gold-text{
+      background:linear-gradient(105deg,#8a6d3b,#e8d5a3 40%,#c4a35a 60%,#8a6d3b);
+      background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
     }
     .gold-shimmer{
-      background: linear-gradient(90deg, #a66d28, #dbbc72, #c08a33, #dbbc72, #a66d28);
-      background-size: 200% auto;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: shimmer 4s linear infinite;
+      background:linear-gradient(90deg,#8a6d3b,#e8d5a3,#c4a35a,#e8d5a3,#8a6d3b);
+      background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+      animation:shimmer 5s linear infinite;
     }
-
-
-    /* تسريع العرض */
-    img{content-visibility:auto}
-    .cat-card,.product-card{content-visibility:auto;contain-intrinsic-size:auto 220px}
-    .glass{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-
-    /* حقيبة التحميل الفاخرة */
-    .bag-loader{position:relative;width:88px;height:100px;margin:0 auto 16px}
-    .bag-loader svg{width:100%;height:100%;filter:drop-shadow(0 8px 24px rgba(192,138,51,.35))}
-    .bag-float{animation:bagFloat 2.2s ease-in-out infinite}
-    @keyframes bagFloat{
-      0%,100%{transform:translateY(0) rotate(-2deg)}
-      50%{transform:translateY(-10px) rotate(2deg)}
+    @keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+    .site-header{
+      background:linear-gradient(180deg,rgba(10,9,8,.93),rgba(10,9,8,.78))!important;
+      border-bottom:1px solid var(--line)!important;
+      backdrop-filter:blur(24px) saturate(1.3);-webkit-backdrop-filter:blur(24px) saturate(1.3);
+      box-shadow:0 12px 40px rgba(0,0,0,.45);
     }
+    .cat-card,.product-card{
+      transition:transform .5s cubic-bezier(.22,1,.36,1),box-shadow .5s,border-color .35s;
+      background:linear-gradient(165deg,rgba(30,26,22,.95),rgba(14,12,10,.98));
+      border:1px solid var(--line);
+      box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 18px 40px -18px rgba(0,0,0,.65);
+      overflow:hidden;
+    }
+    .cat-card:hover,.cat-card:active,.product-card:hover,.product-card:active{
+      transform:translateY(-10px) scale(1.015);border-color:var(--line2);
+      box-shadow:0 1px 0 rgba(255,255,255,.07) inset,0 30px 60px -20px rgba(0,0,0,.75),0 0 40px -15px rgba(196,163,90,.2);
+    }
+    .cat-card img,.product-card img{transition:transform .85s cubic-bezier(.22,1,.36,1)}
+    .cat-card:hover img,.product-card:hover img{transform:scale(1.08)}
+    .card-3d{}
+    .logo-3d{transition:transform .35s cubic-bezier(.22,1,.36,1)}
+    .logo-3d:active{transform:scale(.92) rotate(-5deg)}
+    .btn-3d{transition:transform .2s,box-shadow .2s;box-shadow:0 8px 0 rgba(0,0,0,.2),0 12px 28px rgba(196,163,90,.22)}
+    .btn-3d:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.2),0 6px 14px rgba(196,163,90,.15)}
+    .pressable{transition:transform .18s,opacity .18s;-webkit-tap-highlight-color:transparent}
+    .pressable:active{transform:scale(.96);opacity:.92}
+    .btn-lux{
+      background:linear-gradient(135deg,#d4b76a,#c4a35a 45%,#9a7a3c);color:#1a140c;font-weight:700;
+      box-shadow:0 10px 30px rgba(196,163,90,.25),inset 0 1px 0 rgba(255,255,255,.35);
+    }
+    .lux-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(196,163,90,.45),transparent);border:0}
+    .hero-strip{position:relative;padding:1.6rem 1rem 1.1rem;text-align:center;overflow:hidden}
+    .hero-strip::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(196,163,90,.07),transparent 70%);pointer-events:none}
+    .hero-kicker{font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);opacity:.9;font-weight:500}
+    .hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(1.7rem,6vw,2.7rem);font-weight:500;letter-spacing:.04em;line-height:1.15;margin-top:.3rem}
+    .hero-sub{font-size:12px;color:var(--muted);margin-top:.45rem;font-weight:300;letter-spacing:.08em}
+    .cat-label{position:absolute;inset-inline:0;bottom:0;padding:2.6rem .9rem .95rem;background:linear-gradient(to top,rgba(8,7,6,.96),transparent)}
+    .cat-label h3{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-weight:500;letter-spacing:.06em;color:var(--cream);margin:0}
+    .cat-label span{font-size:10px;color:var(--gold);letter-spacing:.12em;opacity:.9}
+    .price-tag{font-family:'Cormorant Garamond',serif;font-size:1.08rem;font-weight:600;color:var(--gold-l);letter-spacing:.02em}
+    .bag-loader{position:relative;width:96px;height:110px;margin:0 auto 18px}
+    .bag-loader svg{width:100%;height:100%;filter:drop-shadow(0 12px 32px rgba(196,163,90,.4))}
+    .bag-float{animation:bagFloat 2.4s ease-in-out infinite}
+    @keyframes bagFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(2deg)}}
     .bag-shimmer{animation:bagShimmer 2s linear infinite}
-    @keyframes bagShimmer{
-      0%{opacity:.45} 50%{opacity:1} 100%{opacity:.45}
-    }
-    .bag-handle{transform-origin:50% 20%;animation:bagHandle 2.2s ease-in-out infinite}
-    @keyframes bagHandle{
-      0%,100%{transform:rotate(-3deg)}
-      50%{transform:rotate(3deg)}
-    }
-    .load-dots span{
-      display:inline-block;width:6px;height:6px;margin:0 3px;border-radius:50%;
-      background:#c08a33;animation:dotPulse 1.2s ease-in-out infinite;
-    }
-    .load-dots span:nth-child(2){animation-delay:.2s}
-    .load-dots span:nth-child(3){animation-delay:.4s}
-    @keyframes dotPulse{0%,80%,100%{opacity:.25;transform:scale(.8)}40%{opacity:1;transform:scale(1.15)}}
-    /* قص الصورة */
+    @keyframes bagShimmer{0%{opacity:.4}50%{opacity:1}100%{opacity:.4}}
+    .bag-handle{transform-origin:50% 20%;animation:bagHandle 2.4s ease-in-out infinite}
+    @keyframes bagHandle{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+    .load-dots span{display:inline-block;width:6px;height:6px;margin:0 3px;border-radius:50%;background:var(--gold);animation:dotPulse 1.2s ease-in-out infinite}
+    .load-dots span:nth-child(2){animation-delay:.2s}.load-dots span:nth-child(3){animation-delay:.4s}
+    @keyframes dotPulse{0%,80%,100%{opacity:.25;transform:scale(.8)}40%{opacity:1;transform:scale(1.2)}}
+    img{content-visibility:auto}
+    .cat-card,.product-card{content-visibility:auto;contain-intrinsic-size:auto 240px}
     .crop-overlay{touch-action:none;user-select:none}
-
-
-    /* قائمة منسدلة فخمة بدل select النظام */
     .lux-dd{position:relative;width:100%}
-    .lux-dd-btn{
-      width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
-      padding:12px 14px;border-radius:14px;text-align:right;direction:rtl;
-      background:linear-gradient(145deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02));
-      border:1px solid rgba(192,138,51,0.28);
-      color:#f5edd8;font-size:13px;font-weight:500;
-      box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 8px 20px rgba(0,0,0,.25);
-      transition:border-color .2s,box-shadow .2s,transform .15s;
-    }
-    .lux-dd-btn:active{transform:scale(0.98)}
-    .lux-dd-btn.open{
-      border-color:rgba(192,138,51,0.55);
-      box-shadow:0 0 0 3px rgba(192,138,51,0.12),0 10px 28px rgba(0,0,0,.35);
-    }
-    .lux-dd-menu{
-      position:absolute;z-index:80;left:0;right:0;top:calc(100% + 8px);
-      max-height:260px;overflow-y:auto;border-radius:16px;
-      background:linear-gradient(180deg,#1c1814 0%,#14110e 100%);
-      border:1px solid rgba(192,138,51,0.3);
-      box-shadow:0 20px 50px rgba(0,0,0,.55),0 0 0 1px rgba(192,138,51,0.08);
-      padding:6px;direction:rtl;
-    }
-    .lux-dd-item{
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      width:100%;padding:11px 12px;border-radius:12px;border:none;background:transparent;
-      color:#e8dcc8;font-size:13px;text-align:right;cursor:pointer;
-      transition:background .15s,color .15s;
-    }
-    .lux-dd-item:hover,.lux-dd-item:active{background:rgba(192,138,51,0.12);color:#f5e6c8}
-    .lux-dd-item.active{
-      background:linear-gradient(135deg,rgba(192,138,51,0.22),rgba(192,138,51,0.08));
-      color:#dbbc72;font-weight:600;
-    }
-    .lux-dd-badge{
-      font-size:10px;padding:2px 8px;border-radius:999px;
-      background:rgba(192,138,51,0.15);color:#c08a33;border:1px solid rgba(192,138,51,0.25);
-    }
+    .lux-dd-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px;border-radius:14px;text-align:right;direction:rtl;background:linear-gradient(145deg,rgba(255,255,255,.05),rgba(255,255,255,.015));border:1px solid var(--line2);color:var(--cream);font-size:13px;font-weight:500;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 24px rgba(0,0,0,.3);transition:border-color .2s,box-shadow .2s,transform .15s}
+    .lux-dd-btn:active{transform:scale(.985)}
+    .lux-dd-btn.open{border-color:rgba(196,163,90,.55);box-shadow:0 0 0 3px rgba(196,163,90,.12),0 12px 32px rgba(0,0,0,.4)}
+    .lux-dd-menu{position:absolute;z-index:80;left:0;right:0;top:calc(100% + 8px);max-height:260px;overflow-y:auto;border-radius:16px;background:linear-gradient(180deg,#1a1612,#100e0c);border:1px solid var(--line2);box-shadow:0 24px 50px rgba(0,0,0,.6);padding:6px;direction:rtl}
+    .lux-dd-item{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:11px 12px;border-radius:12px;border:none;background:transparent;color:#e8dcc8;font-size:13px;text-align:right;cursor:pointer;transition:background .15s,color .15s}
+    .lux-dd-item:hover,.lux-dd-item:active{background:rgba(196,163,90,.12);color:#f5e6c8}
+    .lux-dd-item.active{background:linear-gradient(135deg,rgba(196,163,90,.22),rgba(196,163,90,.08));color:#e8d5a3;font-weight:600}
+    .lux-dd-badge{font-size:10px;padding:2px 8px;border-radius:999px;background:rgba(196,163,90,.15);color:var(--gold);border:1px solid rgba(196,163,90,.25)}
     .lux-dd-chevron{width:16px;height:16px;opacity:.7;transition:transform .2s;flex-shrink:0}
     .lux-dd-btn.open .lux-dd-chevron{transform:rotate(180deg)}
-
-    /* زر التواصل العائم — أسفل اليسار فقط، بدون حجب الشاشة */
-    .fab-social{
-      position: fixed !important;
-      left: 16px !important;
-      right: auto !important;
-      bottom: 20px !important;
-      top: auto !important;
-      z-index: 9999 !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      width: auto !important;
-      height: auto !important;
-      transform: none !important;
-      direction: ltr !important;
-      pointer-events: none !important;
-    }
-    /* الزر الرئيسي فقط دائماً قابل للضغط */
-    .fab-social > button{
-      pointer-events: auto !important;
-    }
-    /* قائمة التواصل تظهر فقط عند الفتح */
-    .fab-menu{
-      pointer-events: none !important;
-      display: none !important;
-    }
-    .fab-menu.is-open{
-      display: flex !important;
-      pointer-events: none !important;
-    }
-    .fab-menu.is-open a{
-      pointer-events: auto !important;
-      direction: rtl;
-    }
-    .fab-social span,
-    .fab-social svg{
-      pointer-events: none !important;
-    }
+    .fab-social{position:fixed!important;left:16px!important;right:auto!important;bottom:20px!important;top:auto!important;z-index:9999!important;margin:0!important;padding:0!important;width:auto!important;height:auto!important;transform:none!important;direction:ltr!important;pointer-events:none!important}
+    .fab-social>button{pointer-events:auto!important}
+    .fab-menu{pointer-events:none!important;display:none!important}
+    .fab-menu.is-open{display:flex!important;pointer-events:none!important}
+    .fab-menu.is-open a{pointer-events:auto!important;direction:rtl}
+    .fab-social span,.fab-social svg{pointer-events:none!important}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .fade-up{animation:fadeUp .65s cubic-bezier(.22,1,.36,1) both}
+    .fade-up-d1{animation-delay:.08s}.fade-up-d2{animation-delay:.16s}
+    .modal-lux{background:linear-gradient(165deg,#1a1612,#0e0c0a);border:1px solid var(--line2);box-shadow:0 40px 80px rgba(0,0,0,.7),0 0 0 1px rgba(196,163,90,.08)}
+    ::-webkit-scrollbar{width:6px;height:6px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:rgba(196,163,90,.25);border-radius:99px}
   </style>
 </head>
 <body class="min-h-screen">
@@ -614,7 +536,7 @@
                 <path d="M30 112 H90" stroke="url(#bagGold)" strokeWidth="1.5" strokeLinecap="round" opacity="0.6"/>
               </svg>
             </div>
-            <p className="text-gold-400 text-sm font-medium tracking-wide mb-3">جاري التحميل</p>
+            <p className="text-gold-400 text-sm font-medium tracking-wide mb-3">لحظة من فضلك</p>
             <div className="load-dots"><span/><span/><span/></div>
           </div>
         </div>
@@ -632,7 +554,7 @@
 
       return (
         <div className="min-h-screen bg-[#0f0d0b] pb-20">
-          <header className="sticky top-0 z-30 border-b border-gold-900/40 bg-[#0f0d0b]/90 backdrop-blur-xl">
+          <header className="site-header sticky top-0 z-30">
             <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
               <div className="flex items-center gap-3 select-none" onClick={()=>{
                   const now = Date.now();
@@ -649,8 +571,8 @@
                 {settings.logo ? <img src={settings.logo} className="w-11 h-11 rounded-full object-cover border border-gold-500/50 shadow-lg shadow-gold-500/20 logo-3d"/> :
                   <div className="w-11 h-11 rounded-full bg-gradient-to-br from-gold-300 via-gold-500 to-gold-700 flex items-center justify-center shadow-lg shadow-gold-500/30 logo-3d"><Icon d={I.bag} className="w-5 h-5 text-charcoal"/></div>}
                 <div>
-                  <h1 className="text-base sm:text-lg font-bold font-playfair gold-shimmer">{settings.site_name||"LUXE BAGS"}</h1>
-                  {settings.tagline && <p className="text-[10px] text-gold-600 -mt-0.5">{settings.tagline}</p>}
+                  <h1 className="text-base sm:text-lg font-serif tracking-wide gold-shimmer">{settings.site_name||"LUXE BAGS"}</h1>
+                  {settings.tagline && <p className="text-[9px] text-gold-600/90 -mt-0.5 tracking-[0.15em] uppercase font-light">{settings.tagline}</p>}
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
@@ -720,19 +642,23 @@
             )}
 
 
-          <main className="max-w-6xl mx-auto px-4 py-5">
+          <main className="max-w-6xl mx-auto px-4 py-4 sm:py-7">
             {!activeCategory ? (
               <>
-                <div className="mb-6"></div>
-                <div className="grid grid-cols-2 gap-3 sm:gap-5">
+                <section className="hero-strip fade-up">
+                  <p className="hero-kicker">COLLECTION</p>
+                  <h2 className="hero-title gold-shimmer">{settings.site_name || "LUXE BAGS"}</h2>
+                  <p className="hero-sub">{settings.tagline || "شنط نسائية فاخرة"}</p>
+                  <div className="lux-divider mx-auto mt-5 max-w-[110px]"/>
+                </section>
+                <div className="grid grid-cols-2 gap-3.5 sm:gap-5 fade-up fade-up-d1">
                   {categories.map(cat => (
                     <div key={cat.id} onClick={()=>setActiveCategory(cat)} className="cat-card card-3d relative rounded-2xl overflow-hidden cursor-pointer pressable">
-                      <div className="relative h-44 sm:h-52 overflow-hidden">
-                        <img src={cat.image||"https://placehold.co/400x300/1a1714/c08a33?text=قسم"} className="w-full h-full object-cover transition-transform duration-500 ease-out" loading="lazy" decoding="async" onError={e=>e.target.src="https://placehold.co/400x300/1a1714/c08a33?text=Image"}/>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"/>
-                        <div className="absolute bottom-0 right-0 left-0 p-3">
-                          <h3 className="text-sm font-bold text-gold-100">{cat.title}</h3>
-                          <p className="text-[11px] text-gold-400">{(cat.products||[]).length} منتج</p>
+                      <div className="relative h-52 sm:h-64 overflow-hidden">
+                        <img src={cat.image||"https://placehold.co/400x500/12100e/c4a35a?text=قسم"} className="w-full h-full object-cover" loading="lazy" decoding="async" onError={e=>e.target.src="https://placehold.co/400x500/12100e/c4a35a?text=Image"}/>
+                        <div className="cat-label">
+                          <h3>{cat.title}</h3>
+                          <span>{(cat.products||[]).length} قطعة</span>
                         </div>
                       </div>
                     </div>
@@ -740,7 +666,11 @@
                 </div>
                 {branches.length>0 && (
                   <div className="mt-12">
-                    <h3 className="text-lg font-bold text-gold-200 mb-4 text-center">فروعنا</h3>
+                    <div className="text-center mb-5 fade-up">
+                      <p className="hero-kicker mb-1">OUR BOUTIQUES</p>
+                      <h3 className="font-serif text-2xl text-gold-100 tracking-wide">فروعنا</h3>
+                      <div className="lux-divider mx-auto mt-3 max-w-[80px]"/>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {branches.map(b=>(
                         <div key={b.id} className="p-4 rounded-xl glass flex gap-3">
@@ -762,24 +692,25 @@
                 <div className="mb-8 flex items-center gap-4">
                   <img src={activeCategory.image} className="w-16 h-16 rounded-xl object-cover border border-gold-700/40"/>
                   <div>
-                    <h2 className="text-2xl font-bold text-gold-100 font-playfair">{activeCategory.title}</h2>
-                    <p className="text-sm text-gold-500">{(activeCategory.products||[]).length} منتج</p>
+                    <p className="hero-kicker mb-0.5">COLLECTION</p>
+                    <h2 className="font-serif text-2xl sm:text-3xl text-gold-100 tracking-wide">{activeCategory.title}</h2>
+                    <p className="text-[11px] text-gold-500 mt-0.5 tracking-wider">{(activeCategory.products||[]).length} قطعة</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {(activeCategory.products||[]).map(p=>(
-                    <div key={p.id} className="product-card card-3d rounded-2xl overflow-hidden cursor-pointer pressable" onClick={()=>{ setSelectedProduct(p); const cols=parseColors(p.colors); setSelectedColor(cols[0]||""); }}>
-                      <div className="relative h-52 overflow-hidden">
+                    <div key={p.id} className="product-card card-3d rounded-2xl overflow-hidden cursor-pointer pressable fade-up" onClick={()=>{ setSelectedProduct(p); const cols=parseColors(p.colors); setSelectedColor(cols[0]||""); }}>
+                      <div className="relative h-60 sm:h-64 overflow-hidden">
                         <img src={p.image} className="w-full h-full object-cover" loading="lazy" decoding="async"/>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"/>
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0908]/90 via-[#0a0908]/20 to-transparent"/>
                       </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-gold-100 text-sm mb-1">{p.name}</h3>
-                        {p.description && <p className="text-xs text-gold-600 mb-3 line-clamp-1">{p.description}</p>}
+                      <div className="p-4 pt-3">
+                        <h3 className="font-serif text-base text-gold-100 tracking-wide mb-0.5">{p.name}</h3>
+                        {p.description && <p className="text-[11px] text-gold-600/90 mb-2.5 line-clamp-1 font-light">{p.description}</p>}
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="font-bold gold-text">{formatPrice(currency==="TRY"?p.price_try:p.price_syp,currency)}</p>
-                            <p className="text-[10px] text-gold-700">{currency==="TRY"?formatPrice(p.price_syp,"SYP"):formatPrice(p.price_try,"TRY")}</p>
+                            <p className="price-tag gold-text">{formatPrice(currency==="TRY"?p.price_try:p.price_syp,currency)}</p>
+                            <p className="text-[10px] text-gold-700/80 tracking-wide">{currency==="TRY"?formatPrice(p.price_syp,"SYP"):formatPrice(p.price_try,"TRY")}</p>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {settings.whatsapp && (
@@ -803,7 +734,7 @@
           </main>
 
           {settings.footer_desc && (
-            <footer className="border-t border-gold-900/40 mt-10 py-10 pb-24 text-center px-4">
+            <footer className="border-t border-gold-900/30 mt-14 py-12 pb-28 text-center px-4 relative">
               {settings.footer_desc && <p className="text-gold-500 text-sm mb-4">{settings.footer_desc}</p>}
               {(settings.credits_enabled !== false && settings.credits_enabled !== "false") && (settings.credits_position==="footer" || settings.credits_position==="both" || !settings.credits_position) && (
                 <div className="mt-2 pt-4 border-t border-gold-900/30 max-w-sm mx-auto">
